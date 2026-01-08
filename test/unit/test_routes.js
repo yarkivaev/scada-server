@@ -26,7 +26,7 @@ describe('routes', function() {
         assert(rt.list().length === 1);
     });
 
-    it('handles OPTIONS request with CORS headers', function() {
+    it('handles OPTIONS request with CORS headers', async function() {
         let headers;
         const rt = routes([fakeRoute('GET', '/api/machines')]);
         const request = { method: 'OPTIONS', url: '/api/machines' };
@@ -36,11 +36,11 @@ describe('routes', function() {
             },
             end() {}
         };
-        rt.handle(request, response);
+        await rt.handle(request, response);
         assert(headers['Access-Control-Allow-Origin'] === '*');
     });
 
-    it('handles OPTIONS request with allowed methods', function() {
+    it('handles OPTIONS request with allowed methods', async function() {
         let headers;
         const rt = routes([fakeRoute('GET', '/api/machines')]);
         const request = { method: 'OPTIONS', url: '/api/machines' };
@@ -50,11 +50,11 @@ describe('routes', function() {
             },
             end() {}
         };
-        rt.handle(request, response);
+        await rt.handle(request, response);
         assert(headers['Access-Control-Allow-Methods'].includes('GET'));
     });
 
-    it('returns 200 for OPTIONS request', function() {
+    it('returns 200 for OPTIONS request', async function() {
         let statusCode;
         const rt = routes([fakeRoute('GET', '/api/machines')]);
         const request = { method: 'OPTIONS', url: '/api/machines' };
@@ -64,11 +64,11 @@ describe('routes', function() {
             },
             end() {}
         };
-        rt.handle(request, response);
+        await rt.handle(request, response);
         assert(statusCode === 200);
     });
 
-    it('dispatches to matching route', function() {
+    it('dispatches to matching route', async function() {
         let body;
         const rt = routes([fakeRoute('GET', '/api/machines')]);
         const request = { method: 'GET', url: '/api/machines' };
@@ -78,11 +78,11 @@ describe('routes', function() {
                 body = content;
             }
         };
-        rt.handle(request, response);
+        await rt.handle(request, response);
         assert(JSON.parse(body).path === '/api/machines');
     });
 
-    it('returns 404 for unknown route', function() {
+    it('returns 404 for unknown route', async function() {
         let statusCode;
         const rt = routes([fakeRoute('GET', '/api/machines')]);
         const request = { method: 'GET', url: '/unknown/path' };
@@ -92,11 +92,11 @@ describe('routes', function() {
             },
             end() {}
         };
-        rt.handle(request, response);
+        await rt.handle(request, response);
         assert(statusCode === 404);
     });
 
-    it('returns NOT_FOUND error for unknown route', function() {
+    it('returns NOT_FOUND error for unknown route', async function() {
         let body;
         const rt = routes([fakeRoute('GET', '/api/machines')]);
         const request = { method: 'GET', url: '/unknown/path' };
@@ -106,7 +106,7 @@ describe('routes', function() {
                 body = content;
             }
         };
-        rt.handle(request, response);
+        await rt.handle(request, response);
         assert(JSON.parse(body).error.code === 'NOT_FOUND');
     });
 });

@@ -159,7 +159,7 @@ describe('REST API Integration', function() {
         toAck.acknowledge();
         const machine = client.machine('icht1');
         const result = await machine.alerts({ acknowledged: true });
-        assert(result.items.every((a) => a.acknowledged === true), 'unacknowledged alert in response');
+        assert(result.items.every((a) => {return a.acknowledged === true}), 'unacknowledged alert in response');
     });
 
     it('filters alerts by acknowledged false', async function() {
@@ -169,7 +169,7 @@ describe('REST API Integration', function() {
         toAck.acknowledge();
         const machine = client.machine('icht1');
         const result = await machine.alerts({ acknowledged: false });
-        assert(result.items.every((a) => a.acknowledged === false), 'acknowledged alert in response');
+        assert(result.items.every((a) => {return a.acknowledged === false}), 'acknowledged alert in response');
     });
 
     it('fetches single melting by id', async function() {
@@ -210,7 +210,7 @@ describe('REST API Integration', function() {
     it('returns ISO8601 timestamps in measurements', async function() {
         const machine = client.machine('icht1');
         const result = await machine.measurements({ from: 'now-1h', to: 'now', step: 60 });
-        const voltage = result.items.find((i) => i.key === 'voltage');
+        const voltage = result.items.find((i) => {return i.key === 'voltage'});
         assert(voltage.values.length > 0, 'no values returned');
         assert(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/u.test(voltage.values[0].timestamp), 'timestamp not ISO8601');
     });

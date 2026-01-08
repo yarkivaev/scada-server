@@ -38,13 +38,13 @@ export default function meltingRoute(basePath, plant) {
                 const after = query.after || null;
                 const before = query.before || null;
                 const limit = query.limit ? parseInt(query.limit, 10) : 10;
-                const meltings = shop.meltings.find(machine).map((m) => ({
+                const meltings = shop.meltings.find(machine).map((m) => {return {
                     id: m.id(),
                     start: m.start().toISOString(),
                     end: m.end().toISOString(),
                     loaded: m.chronology().get().loaded,
                     dispensed: m.chronology().get().dispensed
-                }));
+                }});
                 const paginated = cursor(after, before, limit, meltings).result();
                 jsonResponse({ items: paginated.items, nextCursor: paginated.nextCursor, hasMore: paginated.hasMore }).send(res);
             }

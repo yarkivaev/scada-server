@@ -150,6 +150,7 @@ export default [
     {
         files: ['test/**/*.js'],
         rules: {
+            'max-lines': 'off',
             'max-lines-per-function': 'off',
             'max-statements': 'off',
             'max-nested-callbacks': ['error', 5],

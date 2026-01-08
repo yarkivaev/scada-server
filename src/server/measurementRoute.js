@@ -31,32 +31,31 @@ export default function measurementRoute(basePath, plant, clock) {
         route(
             'GET',
             `${basePath}/machines/:machineId/measurements`,
-            (req, res, params, query) => {
+            async (req, res, params, query) => {
                 const machine = find(params.machineId);
                 if (!machine) {
                     jsonResponse({ items: [] }).send(res);
                     return;
                 }
-                const keys = query.keys ? query.keys.split(',') : Object.keys(machine.sensors);
+                const requested = query.keys ? query.keys.split(',') : Object.keys(machine.sensors);
+                const keys = requested.filter((key) => {return machine.sensors[key]});
                 const fromExpr = query.from || 'now-1M';
                 const toExpr = query.to || 'now';
                 const from = timeExpression(fromExpr, clock, beginning).resolve();
                 const to = timeExpression(toExpr, clock, beginning).resolve();
                 const step = query.step ? parseInt(query.step, 10) * 1000 : 1000;
                 const range = { start: from, end: to };
-                const items = [];
-                keys.forEach((key) => {
+                const promises = keys.map(async (key) => {
                     const sensor = machine.sensors[key];
-                    if (sensor) {
-                        const measurements = sensor.measurements(range, step);
-                        const unit = measurements.length > 0 ? measurements[0].unit : '';
-                        const values = measurements.map((m) => ({
-                            timestamp: m.timestamp.toISOString(),
-                            value: m.value
-                        }));
-                        items.push({ key, name: sensor.name(), unit, values });
-                    }
+                    const measurements = await sensor.measurements(range, step);
+                    const unit = measurements.length > 0 ? measurements[0].unit : '';
+                    const values = measurements.map((m) => {return {
+                        timestamp: m.timestamp.toISOString(),
+                        value: m.value
+                    }});
+                    return { key, name: sensor.name(), unit, values };
                 });
+                const items = await Promise.all(promises);
                 jsonResponse({ items }).send(res);
             }
         )

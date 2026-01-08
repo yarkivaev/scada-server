@@ -16,7 +16,7 @@ describe('measurementRoute', function() {
         assert(routes[0].matches(request) === true);
     });
 
-    it('returns measurements', function() {
+    it('returns measurements', async function() {
         const plant = fakePlant({ machineId: 'icht1' });
         let body;
         const routes = measurementRoute('/api', plant, () => {return new Date()});
@@ -27,11 +27,11 @@ describe('measurementRoute', function() {
                 body = content;
             }
         };
-        routes[0].handle(request, response);
-        assert(JSON.parse(body).items.find((i) => i.key === 'voltage') !== undefined);
+        await routes[0].handle(request, response);
+        assert(JSON.parse(body).items.find((i) => {return i.key === 'voltage'}) !== undefined);
     });
 
-    it('passes keys from query', function() {
+    it('passes keys from query', async function() {
         const plant = fakePlant({ machineId: 'icht1' });
         let body;
         const routes = measurementRoute('/api', plant, () => {return new Date()});
@@ -42,12 +42,12 @@ describe('measurementRoute', function() {
                 body = content;
             }
         };
-        routes[0].handle(request, response);
+        await routes[0].handle(request, response);
         const parsed = JSON.parse(body);
-        assert(parsed.items.find((i) => i.key === 'voltage') !== undefined && parsed.items.find((i) => i.key === 'cosphi') === undefined);
+        assert(parsed.items.find((i) => {return i.key === 'voltage'}) !== undefined && parsed.items.find((i) => {return i.key === 'cosphi'}) === undefined);
     });
 
-    it('returns items for machine', function() {
+    it('returns items for machine', async function() {
         const plant = fakePlant({ machineId: 'icht1' });
         let body;
         const routes = measurementRoute('/api', plant, () => {return new Date()});
@@ -58,7 +58,7 @@ describe('measurementRoute', function() {
                 body = content;
             }
         };
-        routes[0].handle(request, response);
+        await routes[0].handle(request, response);
         assert(JSON.parse(body).items !== undefined);
     });
 

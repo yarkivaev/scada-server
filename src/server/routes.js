@@ -16,7 +16,7 @@ export default function routes(routeList) {
         list() {
             return routeList;
         },
-        handle(req, res) {
+        async handle(req, res) {
             if (req.method === 'OPTIONS') {
                 res.writeHead(200, {
                     'Access-Control-Allow-Origin': '*',
@@ -30,7 +30,7 @@ export default function routes(routeList) {
                 return rt.matches(req);
             });
             if (matching) {
-                matching.handle(req, res);
+                await matching.handle(req, res);
             } else {
                 errorResponse('NOT_FOUND', 'Route not found', 404).send(res);
             }

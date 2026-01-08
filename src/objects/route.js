@@ -48,7 +48,7 @@ export default function route(method, path, action) {
                     return { ...acc, [key]: decodeURIComponent(val || '') };
                 }, {})
                 : {};
-            action(request, response, extracted, query);
+            return action(request, response, extracted, query);
         }
     };
 }
