@@ -50,6 +50,12 @@ export default function machineClient(baseUrl, machineId, fetcher, eventSource) 
             if (options && options.keys) {
                 params.set('keys', options.keys.join(','));
             }
+            if (options && options.since) {
+                params.set('since', options.since);
+            }
+            if (options && options.step) {
+                params.set('step', String(options.step));
+            }
             const qs = params.toString();
             return sseConnection(
                 `${url}/measurements/stream${qs ? `?${qs}` : ''}`,
@@ -91,6 +97,9 @@ export default function machineClient(baseUrl, machineId, fetcher, eventSource) 
             if (options && options.limit) {
                 params.set('limit', String(options.limit));
             }
+            if (options && options.active) {
+                params.set('active', 'true');
+            }
             const qs = params.toString();
             return request(`/meltings${qs ? `?${qs}` : ''}`);
         },
@@ -99,6 +108,36 @@ export default function machineClient(baseUrl, machineId, fetcher, eventSource) 
         },
         meltingStream() {
             return sseConnection(`${url}/meltings/stream`, eventSource);
+        },
+        async startMelting() {
+            return request('/meltings/start', { method: 'POST' });
+        },
+        async stopMelting(meltingId) {
+            return request(`/meltings/${meltingId}/stop`, { method: 'POST' });
+        },
+        async weight() {
+            return request('/weight');
+        },
+        async setWeight(amount) {
+            return request('/weight', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount })
+            });
+        },
+        async load(amount) {
+            return request('/load', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount })
+            });
+        },
+        async dispense(amount) {
+            return request('/dispense', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount })
+            });
         }
     };
 }

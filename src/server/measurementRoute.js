@@ -25,7 +25,7 @@ export default function measurementRoute(basePath, plant, clock) {
                 return machine;
             }
         }
-        return null;
+        return undefined;
     }
     return [
         route(

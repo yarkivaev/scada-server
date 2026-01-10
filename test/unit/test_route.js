@@ -111,4 +111,14 @@ describe('route', function() {
         rt.handle(request, response);
         assert(receivedReq === request && receivedRes === response);
     });
+
+    it('handles query parameter without value', function() {
+        let extracted;
+        const rt = route('GET', '/machines', (req, res, params, query) => {
+            extracted = query;
+        });
+        const request = { method: 'GET', url: '/machines?flag' };
+        rt.handle(request, {});
+        assert(extracted.flag === '', 'empty value should be empty string');
+    });
 });

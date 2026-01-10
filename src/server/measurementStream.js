@@ -25,7 +25,7 @@ export default function measurementStream(basePath, plant, clock) {
                 return machine;
             }
         }
-        return null;
+        return undefined;
     }
     return [
         route(
@@ -33,6 +33,7 @@ export default function measurementStream(basePath, plant, clock) {
             `${basePath}/machines/:machineId/measurements/stream`,
             (req, res, params, query) => {
                 const sse = sseResponse(res, clock);
+                sse.heartbeat();
                 const machine = find(params.machineId);
                 if (!machine) {
                     sse.close();

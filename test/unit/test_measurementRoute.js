@@ -76,4 +76,19 @@ describe('measurementRoute', function() {
         routes[0].handle(request, response);
         assert(JSON.parse(body).items.length === 0);
     });
+
+    it('resolves beginning time expression', async function() {
+        const plant = fakePlant({ machineId: 'icht1' });
+        let body;
+        const routes = measurementRoute('/api', plant, () => {return new Date()});
+        const request = { method: 'GET', url: '/api/machines/icht1/measurements?from=beginning&step=1' };
+        const response = {
+            writeHead() {},
+            end(content) {
+                body = content;
+            }
+        };
+        await routes[0].handle(request, response);
+        assert(JSON.parse(body).items !== undefined, 'should return items with beginning expression');
+    });
 });

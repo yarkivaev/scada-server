@@ -22,7 +22,7 @@ export default function alertStream(basePath, plant, clock) {
                 return { machine, shop };
             }
         }
-        return null;
+        return undefined;
     }
     return [
         route(
@@ -30,6 +30,7 @@ export default function alertStream(basePath, plant, clock) {
             `${basePath}/machines/:machineId/alerts/stream`,
             (req, res, params) => {
                 const sse = sseResponse(res, clock);
+                sse.heartbeat();
                 const result = find(params.machineId);
                 if (!result) {
                     sse.close();

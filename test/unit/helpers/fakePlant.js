@@ -37,35 +37,97 @@ export default function fakePlant(config = {}) {
             }
         };
     }
+    let machineWeight = config.weight || 0;
     const machine = {
         name() {
             return machineId;
         },
         sensors: {
-            voltage: fakeSensor(voltageData, 'V', 'Напряжение'),
-            cosphi: fakeSensor(cosphiData, 'cos(φ)', 'Косинус φ')
+            voltage: fakeSensor(voltageData, 'V', 'Voltage'),
+            cosphi: fakeSensor(cosphiData, 'cos(φ)', 'Power Factor')
         },
         alerts() {
             return alertItems;
+        },
+        chronology() {
+            return {
+                get(query) {
+                    if (query && query.type === 'current') {
+                        return { weight: machineWeight };
+                    }
+                    return { weight: machineWeight };
+                }
+            };
+        },
+        reset(amount) {
+            machineWeight = amount;
+        },
+        load(amount) {
+            machineWeight += amount;
+        },
+        dispense(amount) {
+            machineWeight -= amount;
         }
     };
     const meltings = {
-        all() {
-            return meltingItems;
-        },
-        find(m) {
+        query(options) {
+            const opts = options !== undefined ? options : {};
+            if (opts.stream !== undefined) {
+                subscribers.push(opts.stream);
+                return {
+                    cancel() {
+                        const index = subscribers.indexOf(opts.stream);
+                        subscribers.splice(index, 1);
+                    }
+                };
+            }
+            if (opts.id !== undefined) {
+                const item = meltingItems.find((m) => {
+                    return m.id() === opts.id;
+                });
+                return item !== undefined ? item : undefined;
+            }
+            if (opts.machine !== undefined) {
+                return meltingItems.filter((item) => {
+                    return item.machineId === opts.machine.name();
+                });
+            }
             return meltingItems.filter((item) => {
-                return item.machineId === m.name();
+                return item.chronology().get().end !== undefined;
             });
         },
-        stream(callback) {
-            subscribers.push(callback);
-            return {
-                cancel() {
-                    const index = subscribers.indexOf(callback);
-                    subscribers.splice(index, 1);
+        add(m, data) {
+            let meltingEnd = data && data.end ? new Date(data.end) : undefined;
+            const meltingStart = data && data.start ? new Date(data.start) : new Date();
+            const meltingId = `m${meltingItems.length + 1}`;
+            let meltingData = { initial: 0, weight: 0, loaded: 0, dispensed: 0 };
+            const melting = {
+                id() {
+                    return meltingId;
+                },
+                machineId: m.name(),
+                chronology() {
+                    return {
+                        get() {
+                            const result = { start: meltingStart, ...meltingData };
+                            if (meltingEnd !== undefined) {
+                                result.end = meltingEnd;
+                            }
+                            return result;
+                        }
+                    };
+                },
+                stop() {
+                    meltingEnd = new Date();
+                    return melting;
+                },
+                update(updated) {
+                    meltingData = { ...meltingData, ...updated };
+                    return melting;
                 }
             };
+            meltingItems.push(melting);
+            return melting;
         },
         notify(event) {
             subscribers.forEach((cb) => {

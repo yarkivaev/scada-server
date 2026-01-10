@@ -18,9 +18,9 @@ import routes from './routes.js';
  *
  * @example
  *   import { scadaServer } from 'scada-server';
- *   import { sokolPlant, meltingMachine } from 'sokol-scada';
- *   const plant = sokolPlant(meltingMachine);
- *   const server = scadaServer('/supervisor/api/v1', plant);
+ *   import { plant, meltingShop, meltingMachine } from 'scada';
+ *   const p = createPlant(meltingMachine); // your plant factory
+ *   const server = scadaServer('/api/v1', p);
  *   http.createServer((req, res) => server.handle(req, res)).listen(3000);
  */
 export default function scadaServer(basePath, plant, clock) {

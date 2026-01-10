@@ -5,10 +5,10 @@
  * @example
  *   import http from 'http';
  *   import { scadaServer } from 'scada-server';
- *   import { sokolPlant, meltingMachine } from 'sokol-scada';
+ *   import { plant, meltingShop, meltingMachine } from 'scada';
  *
- *   const plant = sokolPlant(meltingMachine);
- *   const server = scadaServer('/supervisor/api/v1', plant);
+ *   const p = createPlant(meltingMachine); // your plant factory
+ *   const server = scadaServer('/api/v1', p);
  *   http.createServer((req, res) => server.handle(req, res)).listen(3000);
  */
 

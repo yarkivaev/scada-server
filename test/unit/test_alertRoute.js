@@ -131,4 +131,20 @@ describe('alertRoute', function() {
         request.emit('data', JSON.stringify({ acknowledged: true }));
         request.emit('end');
     });
+
+    it('returns empty alerts for unknown machine', function() {
+        const plant = fakePlant({ machineId: 'icht1' });
+        let body;
+        const routes = alertRoute('/api', plant);
+        const request = { method: 'GET', url: '/api/machines/unknown/alerts' };
+        const response = {
+            writeHead() {},
+            end(content) {
+                body = content;
+            }
+        };
+        routes[0].handle(request, response);
+        const parsed = JSON.parse(body);
+        assert(parsed.items.length === 0 && parsed.total === 0, 'should return empty alerts');
+    });
 });

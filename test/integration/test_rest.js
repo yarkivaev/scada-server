@@ -1,7 +1,7 @@
 import assert from 'assert';
 import http from 'http';
-import meltingMachine from '../../../scada/src/meltingMachine.js';
-import sokolPlant from '../../../sokol-scada/src/sokolPlant.js';
+import { meltingMachine } from 'scada';
+import testPlant from './helpers/testPlant.js';
 import { scadaClient } from '../../client/index.js';
 import { scadaServer } from '../../index.js';
 
@@ -12,7 +12,7 @@ describe('REST API Integration', function() {
     let plant;
 
     beforeEach(function(done) {
-        plant = sokolPlant(meltingMachine);
+        plant = testPlant(meltingMachine);
         const api = scadaServer('/api', plant);
         server = http.createServer((req, res) => {
             api.handle(req, res);
@@ -175,9 +175,9 @@ describe('REST API Integration', function() {
     it('fetches single melting by id', async function() {
         const shop = plant.shops.get().meltingShop;
         const machineObj = shop.machines.get().icht1;
-        const active = shop.meltings.start(machineObj);
-        active.chronology().load(500);
-        active.chronology().dispense(480);
+        const active = shop.meltings.add(machineObj);
+        machineObj.load(500);
+        machineObj.dispense(480);
         active.stop();
         const machine = client.machine('icht1');
         const result = await machine.melting(active.id());
@@ -227,12 +227,238 @@ describe('REST API Integration', function() {
     it('returns ISO8601 timestamps in meltings', async function() {
         const shop = plant.shops.get().meltingShop;
         const machineObj = shop.machines.get().icht1;
-        const active = shop.meltings.start(machineObj);
+        const active = shop.meltings.add(machineObj);
         active.stop();
         const machine = client.machine('icht1');
         const result = await machine.meltings({ limit: 10 });
         assert(result.items.length > 0, 'no meltings returned');
         assert(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/u.test(result.items[0].start), 'start not ISO8601');
         assert(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d{3}Z$/u.test(result.items[0].end), 'end not ISO8601');
+    });
+
+    it('fetches machine weight', async function() {
+        const machine = client.machine('icht1');
+        const result = await machine.weight();
+        assert(typeof result.amount === 'number', 'weight amount not returned');
+    });
+
+    it('sets machine weight', async function() {
+        const machine = client.machine('icht1');
+        const amount = Math.floor(Math.random() * 1000);
+        const result = await machine.setWeight(amount);
+        assert(result.amount === amount, 'weight not set correctly');
+    });
+
+    it('loads material into machine', async function() {
+        const machine = client.machine('icht1');
+        const amount = Math.floor(Math.random() * 100);
+        const result = await machine.load(amount);
+        assert(result.amount === amount, 'loaded amount not returned');
+    });
+
+    it('dispenses material from machine', async function() {
+        const machine = client.machine('icht1');
+        const shop = plant.shops.get().meltingShop;
+        const machineObj = shop.machines.get().icht1;
+        machineObj.load(500);
+        const amount = Math.floor(Math.random() * 50);
+        const result = await machine.dispense(amount);
+        assert(result.amount === amount, 'dispensed amount not returned');
+    });
+
+    it('starts melting via client', async function() {
+        const machine = client.machine('icht1');
+        const result = await machine.startMelting();
+        assert(result.id !== undefined, 'melting id not returned');
+        assert(result.start !== undefined, 'start time not returned');
+    });
+
+    it('stops melting via client', async function() {
+        const machine = client.machine('icht1');
+        const started = await machine.startMelting();
+        const result = await machine.stopMelting(started.id);
+        assert(result.id === started.id, 'wrong melting id');
+        assert(result.end !== undefined, 'end time not returned');
+    });
+
+    it('creates melting with data via POST', async function() {
+        const response = await fetch(`http://localhost:${port}/api/machines/icht1/meltings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ start: '2024-01-01T00:00:00Z', end: '2024-01-01T01:00:00Z' })
+        });
+        assert(response.status === 201, 'expected 201 status');
+        const result = await response.json();
+        assert(result.id !== undefined, 'melting id not returned');
+    });
+
+    it('updates melting via PUT', async function() {
+        const shop = plant.shops.get().meltingShop;
+        const machineObj = shop.machines.get().icht1;
+        const active = shop.meltings.add(machineObj);
+        const response = await fetch(`http://localhost:${port}/api/machines/icht1/meltings/${active.id()}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ weight: 500 })
+        });
+        assert(response.status === 200, 'expected 200 status');
+        const result = await response.json();
+        assert(result.id === active.id(), 'wrong melting id');
+    });
+
+    it('fetches meltings with after cursor', async function() {
+        const shop = plant.shops.get().meltingShop;
+        const machineObj = shop.machines.get().icht1;
+        const first = shop.meltings.add(machineObj, { start: '2024-01-01T00:00:00Z', end: '2024-01-01T01:00:00Z' });
+        shop.meltings.add(machineObj, { start: '2024-01-02T00:00:00Z', end: '2024-01-02T01:00:00Z' });
+        const machine = client.machine('icht1');
+        const result = await machine.meltings({ after: '2024-01-01T12:00:00Z' });
+        assert(result.items.every((m) => {return new Date(m.start) > new Date('2024-01-01T12:00:00Z')}), 'items before cursor included');
+    });
+
+    it('fetches meltings with before cursor', async function() {
+        const shop = plant.shops.get().meltingShop;
+        const machineObj = shop.machines.get().icht1;
+        shop.meltings.add(machineObj, { start: '2024-01-01T00:00:00Z', end: '2024-01-01T01:00:00Z' });
+        shop.meltings.add(machineObj, { start: '2024-01-03T00:00:00Z', end: '2024-01-03T01:00:00Z' });
+        const machine = client.machine('icht1');
+        const result = await machine.meltings({ before: '2024-01-02T00:00:00Z' });
+        assert(result.items.every((m) => {return new Date(m.start) < new Date('2024-01-02T00:00:00Z')}), 'items after cursor included');
+    });
+
+    it('fetches only active meltings', async function() {
+        const shop = plant.shops.get().meltingShop;
+        const machineObj = shop.machines.get().icht1;
+        shop.meltings.add(machineObj);
+        const completed = shop.meltings.add(machineObj, { start: '2024-01-01T00:00:00Z', end: '2024-01-01T01:00:00Z' });
+        const machine = client.machine('icht1');
+        const result = await machine.meltings({ active: true });
+        assert(result.items.every((m) => {return m.end === undefined}), 'completed melting in active results');
+    });
+
+    it('fetches measurements with beginning time', async function() {
+        const machine = client.machine('icht1');
+        const result = await machine.measurements({ from: 'beginning', to: 'now', step: 86400 });
+        assert(result.items !== undefined, 'items not returned');
+    });
+
+    it('returns 404 for stop on unknown melting', async function() {
+        const machine = client.machine('icht1');
+        let thrown;
+        try {
+            await machine.stopMelting('unknown-id');
+        } catch (err) {
+            thrown = err;
+        }
+        assert(thrown.error !== undefined, 'error lacks error wrapper');
+        assert(thrown.error.code === 'NOT_FOUND', 'expected NOT_FOUND error');
+    });
+
+    it('returns 404 for weight on unknown machine', async function() {
+        const response = await fetch(`http://localhost:${port}/api/machines/unknown-${Math.random()}/weight`);
+        assert(response.status === 404, 'expected 404 status');
+    });
+
+    it('returns 404 for set weight on unknown machine', async function() {
+        const response = await fetch(`http://localhost:${port}/api/machines/unknown-${Math.random()}/weight`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount: 100 })
+        });
+        assert(response.status === 404, 'expected 404 status');
+    });
+
+    it('returns 404 for load on unknown machine', async function() {
+        const response = await fetch(`http://localhost:${port}/api/machines/unknown-${Math.random()}/load`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount: 100 })
+        });
+        assert(response.status === 404, 'expected 404 status');
+    });
+
+    it('returns 404 for dispense on unknown machine', async function() {
+        const response = await fetch(`http://localhost:${port}/api/machines/unknown-${Math.random()}/dispense`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ amount: 100 })
+        });
+        assert(response.status === 404, 'expected 404 status');
+    });
+
+    it('returns 404 for start melting on unknown machine', async function() {
+        const response = await fetch(`http://localhost:${port}/api/machines/unknown-${Math.random()}/meltings/start`, {
+            method: 'POST'
+        });
+        assert(response.status === 404, 'expected 404 status');
+    });
+
+    it('returns 404 for stop melting on unknown machine', async function() {
+        const response = await fetch(`http://localhost:${port}/api/machines/unknown-${Math.random()}/meltings/m1/stop`, {
+            method: 'POST'
+        });
+        assert(response.status === 404, 'expected 404 status');
+    });
+
+    it('returns 404 for create melting on unknown machine', async function() {
+        const response = await fetch(`http://localhost:${port}/api/machines/unknown-${Math.random()}/meltings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ start: '2024-01-01T00:00:00Z', end: '2024-01-01T01:00:00Z' })
+        });
+        assert(response.status === 404, 'expected 404 status');
+    });
+
+    it('returns 404 for update melting on unknown machine', async function() {
+        const response = await fetch(`http://localhost:${port}/api/machines/unknown-${Math.random()}/meltings/m1`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ weight: 500 })
+        });
+        assert(response.status === 404, 'expected 404 status');
+    });
+
+    it('returns 404 for update on unknown melting', async function() {
+        const response = await fetch(`http://localhost:${port}/api/machines/icht1/meltings/unknown-${Math.random()}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ weight: 500 })
+        });
+        assert(response.status === 404, 'expected 404 status');
+    });
+
+    it('returns empty alerts for unknown machine', async function() {
+        const response = await fetch(`http://localhost:${port}/api/machines/unknown-${Math.random()}/alerts`);
+        const body = await response.json();
+        assert(body.items.length === 0, 'expected empty items');
+        assert(body.total === 0, 'expected zero total');
+    });
+
+    it('returns empty meltings for unknown machine', async function() {
+        const response = await fetch(`http://localhost:${port}/api/machines/unknown-${Math.random()}/meltings`);
+        const body = await response.json();
+        assert(body.items.length === 0, 'expected empty items');
+        assert(body.hasMore === false, 'expected hasMore false');
+    });
+
+    it('returns 404 for single melting on unknown machine', async function() {
+        const response = await fetch(`http://localhost:${port}/api/machines/unknown-${Math.random()}/meltings/m1`);
+        assert(response.status === 404, 'expected 404 status');
+    });
+
+    it('fetches measurements with ISO8601 time range', async function() {
+        const machine = client.machine('icht1');
+        const result = await machine.measurements({
+            from: '2024-01-01T00:00:00Z',
+            to: '2024-01-01T01:00:00Z',
+            step: 60
+        });
+        assert(result.items !== undefined, 'items not returned');
+    });
+
+    it('fetches measurements with invalid time expression', async function() {
+        const response = await fetch(`http://localhost:${port}/api/machines/icht1/measurements?from=invalid&to=now`);
+        const body = await response.json();
+        assert(body.items !== undefined, 'items not returned');
     });
 });

@@ -22,7 +22,7 @@ export default function alertRoute(basePath, plant) {
                 return machine;
             }
         }
-        return null;
+        return undefined;
     }
     function findAlert(alertId) {
         for (const shop of Object.values(plant.shops.get())) {
@@ -35,7 +35,7 @@ export default function alertRoute(basePath, plant) {
                 }
             }
         }
-        return null;
+        return undefined;
     }
     return [
         route(

@@ -52,12 +52,11 @@ scada-server/
 ### Server Usage
 
 ```javascript
-import { meltingMachine } from 'scada';
-import { sokolPlant } from 'sokol-scada';
+import { plant, meltingShop, meltingMachine } from 'scada';
 import { scadaServer } from 'scada-server';
 
-const plant = sokolPlant(meltingMachine);
-const api = scadaServer('/supervisor/api/v1', plant); // calls plant.init() automatically
+const p = createPlant(meltingMachine); // your plant factory
+const api = scadaServer('/api/v1', p); // calls plant.init() automatically
 http.createServer((req, res) => api.handle(req, res)).listen(3000);
 ```
 

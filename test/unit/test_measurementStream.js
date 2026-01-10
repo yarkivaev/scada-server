@@ -120,4 +120,23 @@ describe('measurementStream', function() {
         request.emit('close');
         assert(cancelled === true);
     });
+
+    it('resolves beginning time expression', function() {
+        const written = [];
+        const plant = fakePlant({ machineId: 'icht1' });
+        const routes = measurementStream('/api', plant, () => {return new Date()});
+        const request = new EventEmitter();
+        request.method = 'GET';
+        request.url = '/api/machines/icht1/measurements/stream?since=beginning&step=1';
+        const response = {
+            writeHead() {},
+            write(content) {
+                written.push(content);
+            },
+            end() {}
+        };
+        routes[0].handle(request, response);
+        request.emit('close');
+        assert(written.some((w) => {return w.includes('event: measurement')}), 'should stream with beginning expression');
+    });
 });

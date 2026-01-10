@@ -102,7 +102,7 @@ export default [
             'no-shadow': 'error',
             'no-throw-literal': 'error',
             'no-undef-init': 'error',
-            'no-undefined': 'error',
+            'no-undefined': 'off',
             'no-underscore-dangle': 'error',
             'no-unneeded-ternary': 'error',
             'no-unused-expressions': 'error',
@@ -148,6 +148,12 @@ export default [
         }
     },
     {
+        files: ['client/**/*.js'],
+        rules: {
+            'max-lines-per-function': ['error', { 'max': 150, 'skipBlankLines': true, 'skipComments': true }]
+        }
+    },
+    {
         files: ['test/**/*.js'],
         rules: {
             'max-lines': 'off',
@@ -160,7 +166,9 @@ export default [
             'no-undefined': 'off',
             'no-empty-function': 'off',
             'func-style': 'off',
-            'no-invalid-this': 'off'
+            'no-invalid-this': 'off',
+            'no-negated-condition': 'off',
+            'prefer-destructuring': 'off'
         }
     }
 ];

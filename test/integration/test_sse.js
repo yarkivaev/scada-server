@@ -1,7 +1,7 @@
 import assert from 'assert';
 import http from 'http';
-import meltingMachine from '../../../scada/src/meltingMachine.js';
-import sokolPlant from '../../../sokol-scada/src/sokolPlant.js';
+import { meltingMachine } from 'scada';
+import testPlant from './helpers/testPlant.js';
 import { scadaClient } from '../../client/index.js';
 import { scadaServer } from '../../index.js';
 
@@ -52,7 +52,7 @@ describe('SSE Integration', function() {
     let plant;
 
     beforeEach(function(done) {
-        plant = sokolPlant(meltingMachine);
+        plant = testPlant(meltingMachine);
         const api = scadaServer('/api', plant);
         server = http.createServer((req, res) => {
             api.handle(req, res);
@@ -167,7 +167,7 @@ describe('SSE Integration', function() {
             done();
         });
         setTimeout(() => {
-            shop.meltings.start(machineObj);
+            shop.meltings.add(machineObj);
             setTimeout(() => {
                 if (!received) {
                     stream.close();
@@ -194,9 +194,9 @@ describe('SSE Integration', function() {
             done();
         });
         setTimeout(() => {
-            const active = shop.meltings.start(machineObj);
-            active.chronology().load(500);
-            active.chronology().dispense(480);
+            const active = shop.meltings.add(machineObj);
+            machineObj.load(500);
+            machineObj.dispense(480);
             setTimeout(() => {
                 active.stop();
                 setTimeout(() => {
@@ -229,5 +229,27 @@ describe('SSE Integration', function() {
             assert(true, 'stream should close gracefully');
             done();
         }, 500);
+    });
+
+    it('closes measurement stream for unknown machine', function(done) {
+        this.timeout(5000);
+        const machine = client.machine(`unknown-${Math.random()}`);
+        const stream = machine.measurementStream();
+        setTimeout(() => {
+            stream.close();
+            assert(true, 'stream should close gracefully');
+            done();
+        }, 500);
+    });
+
+    it('streams measurements with since beginning', function(done) {
+        this.timeout(5000);
+        const machine = client.machine('icht1');
+        const stream = machine.measurementStream({ since: 'beginning', step: 86400 });
+        stream.on('measurement', (payload) => {
+            stream.close();
+            assert(typeof payload.key === 'string', 'payload lacks key');
+            done();
+        });
     });
 });

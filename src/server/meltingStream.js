@@ -21,7 +21,7 @@ export default function meltingStream(basePath, plant, clock) {
                 return { machine, shop };
             }
         }
-        return null;
+        return undefined;
     }
     return [
         route(
@@ -29,29 +29,34 @@ export default function meltingStream(basePath, plant, clock) {
             `${basePath}/machines/:machineId/meltings/stream`,
             (req, res, params) => {
                 const sse = sseResponse(res, clock);
+                sse.heartbeat();
                 const result = findMachine(params.machineId);
                 if (!result) {
                     sse.close();
                     return;
                 }
                 const { machine, shop } = result;
-                const subscription = shop.meltings.stream((event) => {
+                const subscription = shop.meltings.query({ stream: (event) => {
                     if (event.type === 'started') {
                         const m = event.melting;
+                        const data = m.chronology().get();
                         sse.emit('melting_started', {
                             id: m.id(),
-                            start: m.start().toISOString()
+                            start: data.start.toISOString()
                         });
                     } else if (event.type === 'completed') {
                         const m = event.melting;
+                        const data = m.chronology().get();
                         sse.emit('melting_ended', {
                             id: m.id(),
-                            end: m.end().toISOString(),
-                            loaded: m.chronology().get().loaded,
-                            dispensed: m.chronology().get().dispensed
+                            end: data.end.toISOString(),
+                            initial: data.initial,
+                            weight: data.weight,
+                            loaded: data.loaded,
+                            dispensed: data.dispensed
                         });
                     }
-                });
+                }});
                 const heartbeat = setInterval(() => {
                     sse.heartbeat();
                 }, 30000);

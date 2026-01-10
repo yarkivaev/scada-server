@@ -8,7 +8,7 @@ describe('cursor', function() {
             { start: '2024-01-04T00:00:00Z' },
             { start: '2024-01-03T00:00:00Z' }
         ];
-        const result = cursor(null, null, 2, items).result();
+        const result = cursor(undefined, undefined, 2, items).result();
         assert(result.items.length === 2);
     });
 
@@ -18,7 +18,7 @@ describe('cursor', function() {
             { start: '2024-01-04T00:00:00Z' },
             { start: '2024-01-03T00:00:00Z' }
         ];
-        const result = cursor('2024-01-03T12:00:00Z', null, 10, items).result();
+        const result = cursor('2024-01-03T12:00:00Z', undefined, 10, items).result();
         assert(result.items.length === 2);
     });
 
@@ -28,7 +28,7 @@ describe('cursor', function() {
             { start: '2024-01-04T00:00:00Z' },
             { start: '2024-01-03T00:00:00Z' }
         ];
-        const result = cursor(null, '2024-01-04T00:00:00Z', 10, items).result();
+        const result = cursor(undefined, '2024-01-04T00:00:00Z', 10, items).result();
         assert(result.items.length === 1 && result.items[0].start === '2024-01-03T00:00:00Z');
     });
 
@@ -49,7 +49,7 @@ describe('cursor', function() {
             { start: '2024-01-04T00:00:00Z' },
             { start: '2024-01-03T00:00:00Z' }
         ];
-        const result = cursor(null, null, 2, items).result();
+        const result = cursor(undefined, undefined, 2, items).result();
         assert(result.hasMore === true);
     });
 
@@ -58,7 +58,7 @@ describe('cursor', function() {
             { start: '2024-01-05T00:00:00Z' },
             { start: '2024-01-04T00:00:00Z' }
         ];
-        const result = cursor(null, null, 10, items).result();
+        const result = cursor(undefined, undefined, 10, items).result();
         assert(result.hasMore === false);
     });
 
@@ -68,14 +68,14 @@ describe('cursor', function() {
             { start: '2024-01-04T00:00:00Z' },
             { start: '2024-01-03T00:00:00Z' }
         ];
-        const result = cursor(null, null, 2, items).result();
+        const result = cursor(undefined, undefined, 2, items).result();
         assert(result.nextCursor === '2024-01-04T00:00:00Z');
     });
 
-    it('returns null nextCursor for empty result', function() {
+    it('returns undefined nextCursor for empty result', function() {
         const items = [];
-        const result = cursor(null, null, 10, items).result();
-        assert(result.nextCursor === null);
+        const result = cursor(undefined, undefined, 10, items).result();
+        assert(result.nextCursor === undefined, 'nextCursor should be undefined for empty result');
     });
 
     it('treats zero limit as one', function() {
@@ -83,7 +83,7 @@ describe('cursor', function() {
             { start: '2024-01-05T00:00:00Z' },
             { start: '2024-01-04T00:00:00Z' }
         ];
-        const result = cursor(null, null, 0, items).result();
+        const result = cursor(undefined, undefined, 0, items).result();
         assert(result.items.length === 1);
     });
 
@@ -92,7 +92,27 @@ describe('cursor', function() {
             { start: '2024-01-05T00:00:00Z' },
             { start: '2024-01-04T00:00:00Z' }
         ];
-        const result = cursor(null, null, -5, items).result();
+        const result = cursor(undefined, undefined, -5, items).result();
         assert(result.items.length === 1);
+    });
+
+    it('returns only active items when active filter is true', function() {
+        const items = [
+            { start: '2024-01-05T00:00:00Z' },
+            { start: '2024-01-04T00:00:00Z', end: '2024-01-04T12:00:00Z' },
+            { start: '2024-01-03T00:00:00Z' }
+        ];
+        const result = cursor(undefined, undefined, 10, items, true).result();
+        assert(result.items.length === 2, 'Should return only active items');
+    });
+
+    it('returns all items when active filter is false', function() {
+        const items = [
+            { start: '2024-01-05T00:00:00Z' },
+            { start: '2024-01-04T00:00:00Z', end: '2024-01-04T12:00:00Z' },
+            { start: '2024-01-03T00:00:00Z' }
+        ];
+        const result = cursor(undefined, undefined, 10, items, false).result();
+        assert(result.items.length === 3, 'Should return all items');
     });
 });

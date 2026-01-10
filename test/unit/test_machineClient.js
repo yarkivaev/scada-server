@@ -138,4 +138,91 @@ describe('machineClient', function() {
         }
         assert(thrown.error.code === 'NOT_FOUND');
     });
+
+    it('starts melting with POST', async function() {
+        let method;
+        let fetchedUrl;
+        const fakeFetch = async (url, options) => {
+            fetchedUrl = url;
+            method = options.method;
+            return { ok: true, json: async () => {return { id: 'm1' }} };
+        };
+        const client = machineClient('http://localhost/api', 'icht1', fakeFetch, function() {});
+        await client.startMelting();
+        assert(method === 'POST' && fetchedUrl.includes('/meltings/start'));
+    });
+
+    it('stops melting with POST', async function() {
+        let method;
+        let fetchedUrl;
+        const fakeFetch = async (url, options) => {
+            fetchedUrl = url;
+            method = options.method;
+            return { ok: true, json: async () => {return { id: 'm1' }} };
+        };
+        const client = machineClient('http://localhost/api', 'icht1', fakeFetch, function() {});
+        await client.stopMelting('m1');
+        assert(method === 'POST' && fetchedUrl.includes('/meltings/m1/stop'));
+    });
+
+    it('fetches machine weight', async function() {
+        let fetchedUrl;
+        const fakeFetch = async (url) => {
+            fetchedUrl = url;
+            return { ok: true, json: async () => {return { amount: 150 }} };
+        };
+        const client = machineClient('http://localhost/api', 'icht1', fakeFetch, function() {});
+        const result = await client.weight();
+        assert(fetchedUrl.includes('/weight') && result.amount === 150);
+    });
+
+    it('sets machine weight with PUT', async function() {
+        let method;
+        let body;
+        const fakeFetch = async (url, options) => {
+            method = options.method;
+            body = options.body;
+            return { ok: true, json: async () => {return { amount: 200 }} };
+        };
+        const client = machineClient('http://localhost/api', 'icht1', fakeFetch, function() {});
+        await client.setWeight(200);
+        assert(method === 'PUT' && JSON.parse(body).amount === 200);
+    });
+
+    it('loads material with POST', async function() {
+        let method;
+        let body;
+        const fakeFetch = async (url, options) => {
+            method = options.method;
+            body = options.body;
+            return { ok: true, json: async () => {return { amount: 50 }} };
+        };
+        const client = machineClient('http://localhost/api', 'icht1', fakeFetch, function() {});
+        await client.load(50);
+        assert(method === 'POST' && JSON.parse(body).amount === 50);
+    });
+
+    it('dispenses material with POST', async function() {
+        let method;
+        let body;
+        const fakeFetch = async (url, options) => {
+            method = options.method;
+            body = options.body;
+            return { ok: true, json: async () => {return { amount: 30 }} };
+        };
+        const client = machineClient('http://localhost/api', 'icht1', fakeFetch, function() {});
+        await client.dispense(30);
+        assert(method === 'POST' && JSON.parse(body).amount === 30);
+    });
+
+    it('fetches meltings with active filter', async function() {
+        let fetchedUrl;
+        const fakeFetch = async (url) => {
+            fetchedUrl = url;
+            return { ok: true, json: async () => {return { items: [] }} };
+        };
+        const client = machineClient('http://localhost/api', 'icht1', fakeFetch, function() {});
+        await client.meltings({ active: true });
+        assert(fetchedUrl.includes('active=true'), 'should include active=true');
+    });
 });
