@@ -1,7 +1,11 @@
 {
-  "name": "scada-server",
-  "version": "1.0.0",
+  "name": "@yarkivaev/scada-server",
+  "version": "1.0.1",
   "description": "Composable SCADA server implementing Supervisor API",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yarkivaev/scada-server"
+  },
   "type": "module",
   "main": "index.js",
   "scripts": {
