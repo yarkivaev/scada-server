@@ -11,8 +11,12 @@ export default function fakePlant(config = {}) {
     const meltingItems = config.meltings || [];
     const voltageData = config.voltage || [];
     const cosphiData = config.cosphi || [];
+    const segmentItems = config.segments || [];
+    const requestItems = config.requests || [];
     const subscribers = [];
     const alertSubscribers = [];
+    const segmentSubscribers = [];
+    const requestSubscribers = [];
     function fakeSensor(data, unit, sensorName) {
         return {
             name() {
@@ -154,6 +158,64 @@ export default function fakePlant(config = {}) {
             });
         }
     };
+    const segments = {
+        query(options) {
+            if (options && options.machine) {
+                return segmentItems.filter((s) => {
+                    return s.machine === options.machine;
+                });
+            }
+            return segmentItems;
+        },
+        stream(callback) {
+            segmentSubscribers.push(callback);
+            return {
+                cancel() {
+                    const index = segmentSubscribers.indexOf(callback);
+                    segmentSubscribers.splice(index, 1);
+                }
+            };
+        },
+        notify(event) {
+            segmentSubscribers.forEach((cb) => {
+                cb(event);
+            });
+        }
+    };
+    const requests = {
+        query(options) {
+            if (options && options.machine) {
+                return requestItems.filter((r) => {
+                    return r.machine === options.machine && !r.resolved;
+                });
+            }
+            return requestItems;
+        },
+        respond(requestId, body) {
+            const item = requestItems.find((r) => {
+                return r.id === requestId;
+            });
+            if (!item) {
+                return undefined;
+            }
+            item.resolved = true;
+            return { id: requestId, ...body };
+        },
+        stream(callback) {
+            requestSubscribers.push(callback);
+            return {
+                cancel() {
+                    const index = requestSubscribers.indexOf(callback);
+                    requestSubscribers.splice(index, 1);
+                }
+            };
+        },
+        notify(event) {
+            requestSubscribers.forEach((cb) => {
+                cb(event);
+            });
+        }
+    };
     const shop = {
         name() {
             return 'testShop';
@@ -165,7 +227,9 @@ export default function fakePlant(config = {}) {
             }
         },
         meltings,
-        alerts
+        alerts,
+        segments,
+        requests
     };
     return {
         shops: {
@@ -178,6 +242,8 @@ export default function fakePlant(config = {}) {
         machine,
         meltings,
         alerts,
+        segments,
+        requests,
         addAlert(alert) {
             alertItems.push(alert);
         },

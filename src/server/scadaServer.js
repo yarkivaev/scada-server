@@ -5,6 +5,10 @@ import measurementRoute from './measurementRoute.js';
 import measurementStream from './measurementStream.js';
 import meltingRoute from './meltingRoute.js';
 import meltingStream from './meltingStream.js';
+import segmentRoute from './segmentRoute.js';
+import segmentStream from './segmentStream.js';
+import requestRoute from './requestRoute.js';
+import requestStream from './requestStream.js';
 import routes from './routes.js';
 
 /**
@@ -35,7 +39,11 @@ export default function scadaServer(basePath, plant, clock) {
         ...alertStream(basePath, plant, time),
         ...alertRoute(basePath, plant),
         ...meltingStream(basePath, plant, time),
-        ...meltingRoute(basePath, plant)
+        ...meltingRoute(basePath, plant),
+        ...segmentRoute(basePath, plant),
+        ...segmentStream(basePath, plant, time),
+        ...requestRoute(basePath, plant),
+        ...requestStream(basePath, plant, time)
     ];
     return routes(routeList);
 }

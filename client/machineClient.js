@@ -109,6 +109,33 @@ export default function machineClient(baseUrl, machineId, fetcher, eventSource) 
         meltingStream() {
             return sseConnection(`${url}/meltings/stream`, eventSource);
         },
+        async segments(options) {
+            const params = new URLSearchParams();
+            if (options && options.from) {
+                params.set('from', options.from);
+            }
+            if (options && options.to) {
+                params.set('to', options.to);
+            }
+            const qs = params.toString();
+            return request(`/segments${qs ? `?${qs}` : ''}`);
+        },
+        segmentStream() {
+            return sseConnection(`${url}/segments/stream`, eventSource);
+        },
+        async requests() {
+            return request('/requests');
+        },
+        requestStream() {
+            return sseConnection(`${url}/requests/stream`, eventSource);
+        },
+        async respond(requestId, body) {
+            return request(`/requests/${requestId}/respond`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+        },
         async startMelting() {
             return request('/meltings/start', { method: 'POST' });
         },
