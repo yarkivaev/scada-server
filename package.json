@@ -1,6 +1,6 @@
 {
   "name": "@yarkivaev/scada-server",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Composable SCADA server implementing Supervisor API",
   "repository": {
     "type": "git",
@@ -8,6 +8,10 @@
   },
   "type": "module",
   "main": "index.js",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client/index.js"
+  },
   "scripts": {
     "test": "mocha --exit 'test/unit/**/*.js'",
     "test:integration": "mocha --exit 'test/integration/**/*.js'",
