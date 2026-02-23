@@ -1,6 +1,6 @@
 import assert from 'assert';
 import http from 'http';
-import { meltingMachine } from 'scada';
+import { meltingMachine } from '@yarkivaev/scada';
 import testPlant from './helpers/testPlant.js';
 import { scadaClient } from '../../client/index.js';
 import { scadaServer } from '../../index.js';
@@ -94,6 +94,12 @@ describe('REST API Integration', function() {
         assert(typeof result.page === 'number', 'page is not flat');
         assert(typeof result.size === 'number', 'size is not flat');
         assert(typeof result.total === 'number', 'total is not flat');
+    });
+
+    it('fetches segments for known machine', async function() {
+        const machine = client.machine('icht1');
+        const result = await machine.segments({ from: 'now-1h', to: 'now' });
+        assert(Array.isArray(result.items), 'segments items is not an array');
     });
 
     it('returns empty alerts when none exist', async function() {

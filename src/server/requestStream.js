@@ -36,25 +36,23 @@ export default function requestStream(basePath, plant, clock) {
                     sse.close();
                     return;
                 }
-                const { machine, shop } = result;
-                const subscription = shop.requests.stream((event) => {
-                    if (event.request.machine === machine.name()) {
-                        if (event.type === 'created') {
-                            sse.emit('request_created', {
-                                id: event.request.id,
-                                segment: {
-                                    name: event.request.name,
-                                    start: event.request.start_time.toISOString(),
-                                    end: event.request.end_time.toISOString(),
-                                    duration: event.request.duration
-                                },
-                                options: event.request.options
-                            });
-                        } else if (event.type === 'resolved') {
-                            sse.emit('request_resolved', {
-                                id: event.request.id
-                            });
-                        }
+                const { machine } = result;
+                const subscription = machine.requests.stream((event) => {
+                    if (event.type === 'created') {
+                        sse.emit('request_created', {
+                            id: event.request.id,
+                            segment: {
+                                name: event.request.name,
+                                start: event.request.startTime.toISOString(),
+                                end: event.request.endTime.toISOString(),
+                                duration: event.request.duration
+                            },
+                            options: event.request.options
+                        });
+                    } else if (event.type === 'resolved') {
+                        sse.emit('request_resolved', {
+                            id: event.request.id
+                        });
                     }
                 });
                 const heartbeat = setInterval(() => {

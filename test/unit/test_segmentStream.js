@@ -50,7 +50,7 @@ describe('segmentStream', function() {
         routes[0].handle(request, response);
         plant.segments.notify({
             type: 'created',
-            segment: { machine: 'icht1', name: 'on', start_time: new Date(), end_time: new Date(), duration: 3600 }
+            segment: { name: 'on', startTime: new Date(), endTime: new Date(), duration: 3600 }
         });
         assert(written.includes('event: segment_created'), 'segment_created event not emitted');
     });
@@ -70,12 +70,12 @@ describe('segmentStream', function() {
         routes[0].handle(request, response);
         plant.segments.notify({
             type: 'relabeled',
-            segment: { machine: 'icht1', name: 'heating', start_time: new Date(), end_time: new Date(), duration: 3600 }
+            segment: { name: 'heating', startTime: new Date(), endTime: new Date(), duration: 3600 }
         });
         assert(written.includes('event: segment_relabeled'), 'segment_relabeled event not emitted');
     });
 
-    it('filters events by machine name', function() {
+    it('streams all events from machine segments collection', function() {
         const plant = fakePlant({ machineId: 'icht1' });
         const routes = segmentStream('/api', plant, () => {return new Date()});
         const request = new EventEmitter();
@@ -90,9 +90,9 @@ describe('segmentStream', function() {
         routes[0].handle(request, response);
         plant.segments.notify({
             type: 'created',
-            segment: { machine: 'other-machine', name: 'on', start_time: new Date(), end_time: new Date(), duration: 3600 }
+            segment: { name: `on-${Math.random()}`, startTime: new Date(), endTime: new Date(), duration: 3600 }
         });
-        assert(!written.includes('event: segment_created'), 'event was not filtered by machine name');
+        assert(written.includes('event: segment_created'), 'segment_created event not streamed');
     });
 
     it('cancels subscription on close', function() {
@@ -111,7 +111,7 @@ describe('segmentStream', function() {
         request.emit('close');
         plant.segments.notify({
             type: 'created',
-            segment: { machine: 'icht1', name: 'on', start_time: new Date(), end_time: new Date(), duration: 3600 }
+            segment: { name: 'on', startTime: new Date(), endTime: new Date(), duration: 3600 }
         });
         assert(!written.includes('event: segment_created'), 'event emitted after close');
     });

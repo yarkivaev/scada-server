@@ -27,24 +27,24 @@ export default function requestRoute(basePath, plant) {
         route(
             'GET',
             `${basePath}/machines/:machineId/requests`,
-            (req, res, params) => {
+            async (req, res, params) => {
                 const result = find(params.machineId);
                 if (!result) {
                     jsonResponse({ items: [] }).send(res);
                     return;
                 }
-                const { machine, shop } = result;
-                const requests = shop.requests.query({ machine: machine.name() });
-                const items = requests.map((r) => {
+                const { machine } = result;
+                const requests = await machine.requests.query();
+                const items = requests.map((item) => {
                     return {
-                        id: r.id,
+                        id: item.id,
                         segment: {
-                            name: r.name,
-                            start: r.start_time.toISOString(),
-                            end: r.end_time.toISOString(),
-                            duration: r.duration
+                            name: item.name,
+                            start: item.startTime.toISOString(),
+                            end: item.endTime.toISOString(),
+                            duration: item.duration
                         },
-                        options: r.options
+                        options: item.options
                     };
                 });
                 jsonResponse({ items }).send(res);
@@ -58,7 +58,7 @@ export default function requestRoute(basePath, plant) {
                 req.on('data', (chunk) => {
                     body += chunk;
                 });
-                req.on('end', () => {
+                req.on('end', async () => {
                     const result = find(params.machineId);
                     if (!result) {
                         errorResponse(
@@ -68,8 +68,8 @@ export default function requestRoute(basePath, plant) {
                         ).send(res);
                         return;
                     }
-                    const { shop } = result;
-                    const response = shop.requests.respond(params.requestId, JSON.parse(body));
+                    const { machine } = result;
+                    const response = await machine.requests.respond(params.requestId, JSON.parse(body));
                     if (!response) {
                         errorResponse(
                             'NOT_FOUND',

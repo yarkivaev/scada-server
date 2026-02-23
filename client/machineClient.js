@@ -1,6 +1,21 @@
 import sseConnection from './sseConnection.js';
 
 /**
+ * Builds a JSON request payload with method, headers, and body.
+ *
+ * @param {string} method - HTTP method
+ * @param {object} data - request body data
+ * @returns {object} fetch options with method, headers, and stringified body
+ */
+function payload(method, data) {
+    return {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    };
+}
+
+/**
  * Client for single machine endpoints.
  * Returns object with methods for machine operations.
  *
@@ -18,11 +33,11 @@ export default function machineClient(baseUrl, machineId, fetcher, eventSource) 
     const url = `${baseUrl}/machines/${machineId}`;
     async function request(path, options) {
         const response = await fetcher(`${url}${path}`, options);
-        const payload = await response.json();
+        const result = await response.json();
         if (!response.ok) {
-            throw payload;
+            throw result;
         }
-        return payload;
+        return result;
     }
     return {
         async info() {
@@ -80,11 +95,7 @@ export default function machineClient(baseUrl, machineId, fetcher, eventSource) 
             return sseConnection(`${url}/alerts/stream`, eventSource);
         },
         async acknowledge(alertId) {
-            return request(`/alerts/${alertId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ acknowledged: true })
-            });
+            return request(`/alerts/${alertId}`, payload('PATCH', { acknowledged: true }));
         },
         async meltings(options) {
             const params = new URLSearchParams();
@@ -129,12 +140,8 @@ export default function machineClient(baseUrl, machineId, fetcher, eventSource) 
         requestStream() {
             return sseConnection(`${url}/requests/stream`, eventSource);
         },
-        async respond(requestId, body) {
-            return request(`/requests/${requestId}/respond`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
+        async respond(requestId, data) {
+            return request(`/requests/${requestId}/respond`, payload('POST', data));
         },
         async startMelting() {
             return request('/meltings/start', { method: 'POST' });
@@ -146,25 +153,13 @@ export default function machineClient(baseUrl, machineId, fetcher, eventSource) 
             return request('/weight');
         },
         async setWeight(amount) {
-            return request('/weight', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount })
-            });
+            return request('/weight', payload('PUT', { amount }));
         },
         async load(amount) {
-            return request('/load', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount })
-            });
+            return request('/load', payload('POST', { amount }));
         },
         async dispense(amount) {
-            return request('/dispense', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ amount })
-            });
+            return request('/dispense', payload('POST', { amount }));
         }
     };
 }

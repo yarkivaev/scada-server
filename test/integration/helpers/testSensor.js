@@ -16,6 +16,9 @@ export default function testSensor(sensorName, unit, base) {
         name() {
             return sensorName;
         },
+        current() {
+            return Promise.resolve({ value: generate(), unit });
+        },
         measurements(range, step) {
             const results = [];
             const start = range.start.getTime();

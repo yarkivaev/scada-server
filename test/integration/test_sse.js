@@ -1,6 +1,6 @@
 import assert from 'assert';
 import http from 'http';
-import { meltingMachine } from 'scada';
+import { meltingMachine } from '@yarkivaev/scada';
 import testPlant from './helpers/testPlant.js';
 import { scadaClient } from '../../client/index.js';
 import { scadaServer } from '../../index.js';

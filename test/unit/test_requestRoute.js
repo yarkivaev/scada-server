@@ -17,11 +17,11 @@ describe('requestRoute', function() {
         assert(routes[0].matches(request) === true);
     });
 
-    it('returns pending requests for known machine', function() {
+    it('returns pending requests for known machine', async function() {
         const plant = fakePlant({
             machineId: 'icht1',
             requests: [
-                { id: 'req-1', machine: 'icht1', name: 'unknown', start_time: new Date('2026-01-01T10:00:00Z'), end_time: new Date('2026-01-01T10:30:00Z'), duration: 1800, options: ['on', 'off'], resolved: false }
+                { id: 'req-1', name: 'unknown', startTime: new Date('2026-01-01T10:00:00Z'), endTime: new Date('2026-01-01T10:30:00Z'), duration: 1800, options: ['on', 'off'], resolved: false }
             ]
         });
         let body;
@@ -33,7 +33,7 @@ describe('requestRoute', function() {
                 body = content;
             }
         };
-        routes[0].handle(request, response);
+        await routes[0].handle(request, response);
         const parsed = JSON.parse(body);
         assert(parsed.items.length === 1, 'should return one request');
         assert(parsed.items[0].id === 'req-1', 'should return request id');
@@ -59,7 +59,7 @@ describe('requestRoute', function() {
         const plant = fakePlant({
             machineId: 'icht1',
             requests: [
-                { id: 'req-1', machine: 'icht1', name: 'unknown', start_time: new Date(), end_time: new Date(), duration: 1800, options: ['on', 'off'], resolved: false }
+                { id: 'req-1', name: 'unknown', startTime: new Date(), endTime: new Date(), duration: 1800, options: ['on', 'off'], resolved: false }
             ]
         });
         const routes = requestRoute('/api', plant);
@@ -84,7 +84,7 @@ describe('requestRoute', function() {
         const plant = fakePlant({
             machineId: 'icht1',
             requests: [
-                { id: 'req-2', machine: 'icht1', name: 'unknown', start_time: new Date(), end_time: new Date(), duration: 1800, options: ['on', 'off'], resolved: false }
+                { id: 'req-2', name: 'unknown', startTime: new Date(), endTime: new Date(), duration: 1800, options: ['on', 'off'], resolved: false }
             ]
         });
         const routes = requestRoute('/api', plant);
@@ -125,13 +125,13 @@ describe('requestRoute', function() {
         request.emit('end');
     });
 
-    it('maps request to segment format', function() {
+    it('maps request to segment format', async function() {
         const start = new Date('2026-01-01T10:00:00Z');
         const end = new Date('2026-01-01T10:30:00Z');
         const plant = fakePlant({
             machineId: 'icht1',
             requests: [
-                { id: 'req-1', machine: 'icht1', name: 'unknown', start_time: start, end_time: end, duration: 1800, options: ['on', 'off'], resolved: false }
+                { id: 'req-1', machine: 'icht1', name: 'unknown', startTime: start, endTime: end, duration: 1800, options: ['on', 'off'], resolved: false }
             ]
         });
         let body;
@@ -143,7 +143,7 @@ describe('requestRoute', function() {
                 body = content;
             }
         };
-        routes[0].handle(request, response);
+        await routes[0].handle(request, response);
         const parsed = JSON.parse(body);
         assert(parsed.items[0].segment.start === start.toISOString(), 'should have ISO start in segment');
         assert(parsed.items[0].segment.end === end.toISOString(), 'should have ISO end in segment');

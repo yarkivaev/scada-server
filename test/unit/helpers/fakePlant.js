@@ -42,6 +42,59 @@ export default function fakePlant(config = {}) {
         };
     }
     let machineWeight = config.weight || 0;
+    const segments = {
+        query(options) {
+            if (!options) {
+                return segmentItems;
+            }
+            return segmentItems.slice();
+        },
+        stream(callback) {
+            segmentSubscribers.push(callback);
+            return {
+                cancel() {
+                    const index = segmentSubscribers.indexOf(callback);
+                    segmentSubscribers.splice(index, 1);
+                }
+            };
+        },
+        notify(event) {
+            segmentSubscribers.forEach((cb) => {
+                cb(event);
+            });
+        }
+    };
+    const requests = {
+        query() {
+            return requestItems.filter((item) => {
+                return !item.resolved;
+            });
+        },
+        respond(requestId, body) {
+            const item = requestItems.find((match) => {
+                return match.id === requestId;
+            });
+            if (!item) {
+                return undefined;
+            }
+            item.resolved = true;
+            return { id: requestId, ...body };
+        },
+        stream(callback) {
+            requestSubscribers.push(callback);
+            return {
+                cancel() {
+                    const index = requestSubscribers.indexOf(callback);
+                    requestSubscribers.splice(index, 1);
+                }
+            };
+        },
+        notify(event) {
+            requestSubscribers.forEach((cb) => {
+                cb(event);
+            });
+        }
+    };
     const machine = {
         name() {
             return machineId;
@@ -55,7 +108,7 @@ export default function fakePlant(config = {}) {
         },
         chronology() {
             return {
-                get(query) {
+                async get(query) {
                     if (query && query.type === 'current') {
                         return { weight: machineWeight };
                     }
@@ -63,6 +116,8 @@ export default function fakePlant(config = {}) {
                 }
             };
         },
+        segments,
+        requests,
         reset(amount) {
             machineWeight = amount;
         },
@@ -158,64 +213,6 @@ export default function fakePlant(config = {}) {
             });
         }
     };
-    const segments = {
-        query(options) {
-            if (options && options.machine) {
-                return segmentItems.filter((s) => {
-                    return s.machine === options.machine;
-                });
-            }
-            return segmentItems;
-        },
-        stream(callback) {
-            segmentSubscribers.push(callback);
-            return {
-                cancel() {
-                    const index = segmentSubscribers.indexOf(callback);
-                    segmentSubscribers.splice(index, 1);
-                }
-            };
-        },
-        notify(event) {
-            segmentSubscribers.forEach((cb) => {
-                cb(event);
-            });
-        }
-    };
-    const requests = {
-        query(options) {
-            if (options && options.machine) {
-                return requestItems.filter((r) => {
-                    return r.machine === options.machine && !r.resolved;
-                });
-            }
-            return requestItems;
-        },
-        respond(requestId, body) {
-            const item = requestItems.find((r) => {
-                return r.id === requestId;
-            });
-            if (!item) {
-                return undefined;
-            }
-            item.resolved = true;
-            return { id: requestId, ...body };
-        },
-        stream(callback) {
-            requestSubscribers.push(callback);
-            return {
-                cancel() {
-                    const index = requestSubscribers.indexOf(callback);
-                    requestSubscribers.splice(index, 1);
-                }
-            };
-        },
-        notify(event) {
-            requestSubscribers.forEach((cb) => {
-                cb(event);
-            });
-        }
-    };
     const shop = {
         name() {
             return 'testShop';
@@ -227,9 +224,7 @@ export default function fakePlant(config = {}) {
             }
         },
         meltings,
-        alerts,
-        segments,
-        requests
+        alerts
     };
     return {
         shops: {
@@ -242,8 +237,8 @@ export default function fakePlant(config = {}) {
         machine,
         meltings,
         alerts,
-        segments,
-        requests,
+        segments: machine.segments,
+        requests: machine.requests,
         addAlert(alert) {
             alertItems.push(alert);
         },

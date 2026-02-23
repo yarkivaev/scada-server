@@ -1,4 +1,4 @@
-import { acknowledgedAlert, activeMelting, alert, alerts, initialized, meltings, meltingShop, plant } from 'scada';
+import { acknowledgedAlert, activeMelting, alert, alerts, initialized, meltings, meltingShop, plant, requests, segments } from '@yarkivaev/scada';
 import testSensor from './testSensor.js';
 
 /**
@@ -15,6 +15,13 @@ export default function testPlant(meltingMachine) {
         cosphi: testSensor('Power Factor', 'cos(φ)', 0.85)
     };
     const machine = meltingMachine('icht1', sensors, history);
-    const shop = meltingShop('meltingShop', initialized({ icht1: machine }, Object.values), meltings(activeMelting), history);
+    const decorated = {
+        ...machine,
+        name: machine.name,
+        segments: segments(),
+        requests: requests(),
+        init: machine.init
+    };
+    const shop = meltingShop('meltingShop', initialized({ icht1: decorated }, Object.values), meltings(activeMelting), history);
     return plant(initialized({ meltingShop: shop }, Object.values));
 }

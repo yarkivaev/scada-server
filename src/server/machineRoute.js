@@ -55,13 +55,13 @@ export default function machineRoute(basePath, plant) {
             }
             jsonResponse(machine).send(res);
         }),
-        route('GET', `${basePath}/machines/:machineId/weight`, (req, res, params) => {
+        route('GET', `${basePath}/machines/:machineId/weight`, async (req, res, params) => {
             const machine = findMachine(params.machineId);
             if (!machine) {
                 errorResponse('NOT_FOUND', `Machine '${params.machineId}' not found`, 404).send(res);
                 return;
             }
-            jsonResponse({ amount: machine.chronology().get({ type: 'current' }).weight }).send(res);
+            jsonResponse({ amount: (await machine.chronology().get({ type: 'current' })).weight }).send(res);
         }),
         route('PUT', `${basePath}/machines/:machineId/weight`, (req, res, params) => {
             const machine = findMachine(params.machineId);
@@ -73,10 +73,10 @@ export default function machineRoute(basePath, plant) {
             req.on('data', (chunk) => {
                 body += chunk;
             });
-            req.on('end', () => {
+            req.on('end', async () => {
                 const data = JSON.parse(body);
                 machine.reset(data.amount);
-                jsonResponse({ amount: machine.chronology().get({ type: 'current' }).weight }).send(res);
+                jsonResponse({ amount: (await machine.chronology().get({ type: 'current' })).weight }).send(res);
             });
         }),
         route('POST', `${basePath}/machines/:machineId/load`, (req, res, params) => {

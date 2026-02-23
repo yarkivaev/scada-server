@@ -36,26 +36,22 @@ export default function segmentStream(basePath, plant, clock) {
                     sse.close();
                     return;
                 }
-                const { machine, shop } = result;
-                const subscription = shop.segments.stream((event) => {
-                    if (event.segment.machine === machine.name()) {
-                        if (event.type === 'created') {
-                            sse.emit('segment_created', {
-                                name: event.segment.name,
-                                start: event.segment.start_time.toISOString(),
-                                end: event.segment.end_time.toISOString(),
-                                duration: event.segment.duration,
-                                machine: event.segment.machine
-                            });
-                        } else if (event.type === 'relabeled') {
-                            sse.emit('segment_relabeled', {
-                                name: event.segment.name,
-                                start: event.segment.start_time.toISOString(),
-                                end: event.segment.end_time.toISOString(),
-                                duration: event.segment.duration,
-                                machine: event.segment.machine
-                            });
-                        }
+                const { machine } = result;
+                const subscription = machine.segments.stream((event) => {
+                    if (event.type === 'created') {
+                        sse.emit('segment_created', {
+                            name: event.segment.name,
+                            start: event.segment.startTime.toISOString(),
+                            end: event.segment.endTime.toISOString(),
+                            duration: event.segment.duration
+                        });
+                    } else if (event.type === 'relabeled') {
+                        sse.emit('segment_relabeled', {
+                            name: event.segment.name,
+                            start: event.segment.startTime.toISOString(),
+                            end: event.segment.endTime.toISOString(),
+                            duration: event.segment.duration
+                        });
                     }
                 });
                 const heartbeat = setInterval(() => {

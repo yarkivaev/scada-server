@@ -50,7 +50,7 @@ describe('requestStream', function() {
         routes[0].handle(request, response);
         plant.requests.notify({
             type: 'created',
-            request: { id: 'req-1', machine: 'icht1', name: 'unknown', start_time: new Date(), end_time: new Date(), duration: 1800, options: ['on', 'off'] }
+            request: { id: 'req-1', name: 'unknown', startTime: new Date(), endTime: new Date(), duration: 1800, options: ['on', 'off'] }
         });
         assert(written.includes('event: request_created'), 'request_created event not emitted');
     });
@@ -70,12 +70,12 @@ describe('requestStream', function() {
         routes[0].handle(request, response);
         plant.requests.notify({
             type: 'resolved',
-            request: { id: 'req-1', machine: 'icht1' }
+            request: { id: 'req-1' }
         });
         assert(written.includes('event: request_resolved'), 'request_resolved event not emitted');
     });
 
-    it('filters events by machine name', function() {
+    it('streams all events from machine requests collection', function() {
         const plant = fakePlant({ machineId: 'icht1' });
         const routes = requestStream('/api', plant, () => {return new Date()});
         const request = new EventEmitter();
@@ -90,9 +90,9 @@ describe('requestStream', function() {
         routes[0].handle(request, response);
         plant.requests.notify({
             type: 'created',
-            request: { id: 'req-1', machine: 'other-machine', name: 'unknown', start_time: new Date(), end_time: new Date(), duration: 1800, options: ['on'] }
+            request: { id: `req-${Math.random()}`, name: 'unknown', startTime: new Date(), endTime: new Date(), duration: 1800, options: ['on'] }
         });
-        assert(!written.includes('event: request_created'), 'event was not filtered by machine name');
+        assert(written.includes('event: request_created'), 'request_created event not streamed');
     });
 
     it('cancels subscription on close', function() {
@@ -111,7 +111,7 @@ describe('requestStream', function() {
         request.emit('close');
         plant.requests.notify({
             type: 'created',
-            request: { id: 'req-1', machine: 'icht1', name: 'unknown', start_time: new Date(), end_time: new Date(), duration: 1800, options: ['on'] }
+            request: { id: 'req-1', name: 'unknown', startTime: new Date(), endTime: new Date(), duration: 1800, options: ['on'] }
         });
         assert(!written.includes('event: request_created'), 'event emitted after close');
     });

@@ -92,19 +92,18 @@ describe('machineRoute', function() {
         assert(routes[2].matches(request) === true);
     });
 
-    it('returns machine weight', function() {
+    it('returns machine weight', function(done) {
         const plant = fakePlant({ machineId: 'icht1', weight: 150 });
-        let body;
         const routes = machineRoute('/api', plant);
         const request = { method: 'GET', url: '/api/machines/icht1/weight' };
         const response = {
             writeHead() {},
             end(content) {
-                body = content;
+                assert(JSON.parse(content).amount === 150, 'should return weight amount');
+                done();
             }
         };
         routes[2].handle(request, response);
-        assert(JSON.parse(body).amount === 150, 'should return weight amount');
     });
 
     it('returns 404 for weight of unknown machine', function() {

@@ -26,30 +26,33 @@ export default function segmentRoute(basePath, plant) {
         route(
             'GET',
             `${basePath}/machines/:machineId/segments`,
-            (req, res, params, query) => {
+            async (req, res, params, query) => {
                 const result = find(params.machineId);
                 if (!result) {
                     jsonResponse({ items: [] }).send(res);
                     return;
                 }
-                const { machine, shop } = result;
-                const options = { machine: machine.name() };
+                const { machine } = result;
+                const options = {};
                 if (query.from) {
                     options.from = query.from;
                 }
                 if (query.to) {
                     options.to = query.to;
                 }
-                const segments = shop.segments.query(options);
+                const segments = await machine.segments.query(options);
                 const items = segments.map((s) => {
                     const mapped = {
                         name: s.name,
-                        start: s.start_time.toISOString(),
-                        end: s.end_time.toISOString(),
+                        start: s.startTime.toISOString(),
+                        end: s.duration === 0 ? new Date().toISOString() : s.endTime.toISOString(),
                         duration: s.duration
                     };
                     if (s.options) {
                         mapped.options = s.options;
+                    }
+                    if (s.label) {
+                        mapped.label = s.label;
                     }
                     return mapped;
                 });
