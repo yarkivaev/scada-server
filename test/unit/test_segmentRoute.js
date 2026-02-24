@@ -20,7 +20,7 @@ describe('segmentRoute', function() {
         const plant = fakePlant({
             machineId: 'icht1',
             segments: [
-                { name: 'on', startTime: new Date('2026-01-01T08:00:00Z'), endTime: new Date('2026-01-01T09:00:00Z'), duration: 3600 }
+                { name: 'on', start_time: new Date('2026-01-01T08:00:00Z'), end_time: new Date('2026-01-01T09:00:00Z'), duration: 3600 }
             ]
         });
         let body;
@@ -44,7 +44,7 @@ describe('segmentRoute', function() {
         const plant = fakePlant({
             machineId: 'icht1',
             segments: [
-                { name: 'heating', startTime: start, endTime: end, duration: 3600 }
+                { name: 'heating', start_time: start, end_time: end, duration: 3600 }
             ]
         });
         let body;
@@ -83,7 +83,7 @@ describe('segmentRoute', function() {
         const plant = fakePlant({
             machineId: 'icht1',
             segments: [
-                { name: 'off', startTime: start, endTime: start, duration: 0 }
+                { name: 'off', start_time: start, end_time: start, duration: 0 }
             ]
         });
         let body;
@@ -106,7 +106,7 @@ describe('segmentRoute', function() {
         const plant = fakePlant({
             machineId: 'icht1',
             segments: [
-                { name: 'on', startTime: new Date(), endTime: new Date(), duration: 60, options: { power: 100 } }
+                { name: 'on', start_time: new Date(), end_time: new Date(), duration: 60, options: { power: 100 } }
             ]
         });
         let body;

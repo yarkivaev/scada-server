@@ -41,18 +41,18 @@ export default function segmentRoute(basePath, plant) {
                     options.to = query.to;
                 }
                 const segments = await machine.segments.query(options);
-                const items = segments.map((s) => {
+                const items = segments.map(({ name, start_time: startTime, end_time: endTime, duration, options: opts, label }) => {
                     const mapped = {
-                        name: s.name,
-                        start: s.startTime.toISOString(),
-                        end: s.duration === 0 ? new Date().toISOString() : s.endTime.toISOString(),
-                        duration: s.duration
+                        name,
+                        start: startTime.toISOString(),
+                        end: duration === 0 ? new Date().toISOString() : endTime.toISOString(),
+                        duration
                     };
-                    if (s.options) {
-                        mapped.options = s.options;
+                    if (opts) {
+                        mapped.options = opts;
                     }
-                    if (s.label) {
-                        mapped.label = s.label;
+                    if (label) {
+                        mapped.label = label;
                     }
                     return mapped;
                 });
