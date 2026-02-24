@@ -40,8 +40,8 @@ export default function requestRoute(basePath, plant) {
                         id: item.id,
                         segment: {
                             name: item.name,
-                            start: item.startTime.toISOString(),
-                            end: item.endTime.toISOString(),
+                            start: item.start_time.toISOString(),
+                            end: item.end_time.toISOString(),
                             duration: item.duration
                         },
                         options: item.options
