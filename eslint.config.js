@@ -156,6 +156,7 @@ export default [
     {
         files: ['test/**/*.js'],
         rules: {
+            'camelcase': 'off',
             'max-lines': 'off',
             'max-lines-per-function': 'off',
             'max-statements': 'off',

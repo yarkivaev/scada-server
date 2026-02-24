@@ -21,7 +21,7 @@ describe('requestRoute', function() {
         const plant = fakePlant({
             machineId: 'icht1',
             requests: [
-                { id: 'req-1', name: 'unknown', startTime: new Date('2026-01-01T10:00:00Z'), endTime: new Date('2026-01-01T10:30:00Z'), duration: 1800, options: ['on', 'off'], resolved: false }
+                { id: 'req-1', name: 'unknown', start_time: new Date('2026-01-01T10:00:00Z'), end_time: new Date('2026-01-01T10:30:00Z'), duration: 1800, options: ['on', 'off'], resolved: false }
             ]
         });
         let body;
@@ -59,7 +59,7 @@ describe('requestRoute', function() {
         const plant = fakePlant({
             machineId: 'icht1',
             requests: [
-                { id: 'req-1', name: 'unknown', startTime: new Date(), endTime: new Date(), duration: 1800, options: ['on', 'off'], resolved: false }
+                { id: 'req-1', name: 'unknown', start_time: new Date(), end_time: new Date(), duration: 1800, options: ['on', 'off'], resolved: false }
             ]
         });
         const routes = requestRoute('/api', plant);
@@ -84,7 +84,7 @@ describe('requestRoute', function() {
         const plant = fakePlant({
             machineId: 'icht1',
             requests: [
-                { id: 'req-2', name: 'unknown', startTime: new Date(), endTime: new Date(), duration: 1800, options: ['on', 'off'], resolved: false }
+                { id: 'req-2', name: 'unknown', start_time: new Date(), end_time: new Date(), duration: 1800, options: ['on', 'off'], resolved: false }
             ]
         });
         const routes = requestRoute('/api', plant);
@@ -131,7 +131,7 @@ describe('requestRoute', function() {
         const plant = fakePlant({
             machineId: 'icht1',
             requests: [
-                { id: 'req-1', machine: 'icht1', name: 'unknown', startTime: start, endTime: end, duration: 1800, options: ['on', 'off'], resolved: false }
+                { id: 'req-1', machine: 'icht1', name: 'unknown', start_time: start, end_time: end, duration: 1800, options: ['on', 'off'], resolved: false }
             ]
         });
         let body;

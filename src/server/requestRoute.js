@@ -35,16 +35,16 @@ export default function requestRoute(basePath, plant) {
                 }
                 const { machine } = result;
                 const requests = await machine.requests.query();
-                const items = requests.map((item) => {
+                const items = requests.map(({ id, name, start_time: startTime, end_time: endTime, duration, options }) => {
                     return {
-                        id: item.id,
+                        id,
                         segment: {
-                            name: item.name,
-                            start: item.start_time.toISOString(),
-                            end: item.end_time.toISOString(),
-                            duration: item.duration
+                            name,
+                            start: startTime.toISOString(),
+                            end: endTime.toISOString(),
+                            duration
                         },
-                        options: item.options
+                        options
                     };
                 });
                 jsonResponse({ items }).send(res);
