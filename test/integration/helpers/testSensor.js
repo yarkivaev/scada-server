@@ -28,14 +28,14 @@ export default function testSensor(sensorName, unit, base) {
             }
             return results;
         },
-        stream(since, step, callback) {
-            const now = new Date();
-            const historical = this.measurements({ start: since, end: now }, step);
+        stream(since, step, callback, clock) {
+            const time = clock || (() => { return new Date(); });
+            const historical = this.measurements({ start: since, end: time() }, step);
             historical.forEach((item) => {
                 callback(item);
             });
             const timer = setInterval(() => {
-                callback({ timestamp: new Date(), value: generate(), unit });
+                callback({ timestamp: time(), value: generate(), unit });
             }, step);
             return {
                 cancel() {

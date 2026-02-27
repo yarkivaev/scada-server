@@ -20,7 +20,7 @@ export default function routes(routeList) {
             if (req.method === 'OPTIONS') {
                 res.writeHead(200, {
                     'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Methods': 'GET, PATCH, OPTIONS',
+                    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
                     'Access-Control-Allow-Headers': 'Content-Type'
                 });
                 res.end();

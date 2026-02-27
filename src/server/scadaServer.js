@@ -9,6 +9,7 @@ import segmentRoute from './segmentRoute.js';
 import segmentStream from './segmentStream.js';
 import requestRoute from './requestRoute.js';
 import requestStream from './requestStream.js';
+import simulationRoute from './simulationRoute.js';
 import routes from './routes.js';
 
 /**
@@ -43,7 +44,8 @@ export default function scadaServer(basePath, plant, clock) {
         ...segmentRoute(basePath, plant),
         ...segmentStream(basePath, plant, time),
         ...requestRoute(basePath, plant),
-        ...requestStream(basePath, plant, time)
+        ...requestStream(basePath, plant, time),
+        ...(time.jump ? simulationRoute(basePath, time) : [])
     ];
     return routes(routeList);
 }

@@ -25,13 +25,14 @@ export default function fakePlant(config = {}) {
             measurements(range, step) {
                 return data.length > 0 ? data : [{ timestamp: new Date(), value: Math.random(), unit }];
             },
-            stream(since, step, callback) {
-                const items = this.measurements({ start: since, end: new Date() }, step);
+            stream(since, step, callback, clock) {
+                const time = clock || (() => { return new Date(); });
+                const items = this.measurements({ start: since, end: time() }, step);
                 items.forEach((item) => {
                     callback(item);
                 });
                 const timer = setInterval(() => {
-                    callback({ timestamp: new Date(), value: Math.random(), unit });
+                    callback({ timestamp: time(), value: Math.random(), unit });
                 }, step);
                 return {
                     cancel() {

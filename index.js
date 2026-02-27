@@ -16,6 +16,10 @@
 export { default as scadaServer } from './src/server/scadaServer.js';
 export { default as routes } from './src/server/routes.js';
 
+// Simulation
+export { default as virtualClock } from './src/objects/virtualClock.js';
+export { default as simulationRoute } from './src/server/simulationRoute.js';
+
 // Objects
 export { default as route } from './src/objects/route.js';
 export { default as jsonResponse } from './src/objects/jsonResponse.js';

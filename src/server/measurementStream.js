@@ -52,7 +52,7 @@ export default function measurementStream(basePath, plant, clock) {
                                 timestamp: item.timestamp.toISOString(),
                                 value: item.value
                             });
-                        });
+                        }, clock);
                         subscriptions.push(subscription);
                     }
                 });

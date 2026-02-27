@@ -1,5 +1,6 @@
 import assert from 'assert';
 import scadaServer from '../../src/server/scadaServer.js';
+import virtualClock from '../../src/objects/virtualClock.js';
 import fakePlant from './helpers/fakePlant.js';
 
 describe('scadaServer', function() {
@@ -39,5 +40,31 @@ describe('scadaServer', function() {
         const server = scadaServer('/api', plant);
         const routeList = server.list();
         assert(routeList.length > 0, 'server should have assembled routes');
+    });
+
+    it('includes simulation routes when virtual clock provided', function() {
+        const plant = fakePlant();
+        const plain = scadaServer('/api', plant);
+        const clock = virtualClock(() => {return new Date()});
+        const server = scadaServer('/api', plant, clock);
+        assert(server.list().length > plain.list().length, 'virtual clock should add simulation routes');
+    });
+
+    it('excludes simulation routes when plain clock provided', function() {
+        const plant = fakePlant();
+        const server = scadaServer('/api', plant, () => {return new Date()});
+        const matching = server.list().find((rt) => {
+            return rt.matches({ method: 'POST', url: '/api/simulation/jump' });
+        });
+        assert(matching === undefined, 'plain clock should not include simulation routes');
+    });
+
+    it('excludes simulation routes when no clock provided', function() {
+        const plant = fakePlant();
+        const server = scadaServer('/api', plant);
+        const matching = server.list().find((rt) => {
+            return rt.matches({ method: 'POST', url: '/api/simulation/jump' });
+        });
+        assert(matching === undefined, 'no clock should not include simulation routes');
     });
 });

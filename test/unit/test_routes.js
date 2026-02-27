@@ -109,4 +109,32 @@ describe('routes', function() {
         await rt.handle(request, response);
         assert(JSON.parse(body).error.code === 'NOT_FOUND');
     });
+
+    it('includes POST in allowed methods for OPTIONS', async function() {
+        let headers;
+        const rt = routes([fakeRoute('GET', '/api/machines')]);
+        const request = { method: 'OPTIONS', url: '/api/machines' };
+        const response = {
+            writeHead(code, hdrs) {
+                headers = hdrs;
+            },
+            end() {}
+        };
+        await rt.handle(request, response);
+        assert(headers['Access-Control-Allow-Methods'].includes('POST'), 'should include POST');
+    });
+
+    it('includes DELETE in allowed methods for OPTIONS', async function() {
+        let headers;
+        const rt = routes([fakeRoute('GET', '/api/machines')]);
+        const request = { method: 'OPTIONS', url: '/api/machines' };
+        const response = {
+            writeHead(code, hdrs) {
+                headers = hdrs;
+            },
+            end() {}
+        };
+        await rt.handle(request, response);
+        assert(headers['Access-Control-Allow-Methods'].includes('DELETE'), 'should include DELETE');
+    });
 });
