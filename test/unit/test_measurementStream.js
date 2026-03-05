@@ -94,7 +94,7 @@ describe('measurementStream', function() {
         assert(ended === true);
     });
 
-    it('cancels subscriptions on close', function() {
+    it('cancels subscriptions on close', async function() {
         let cancelled = false;
         const plant = fakePlant({ machineId: 'icht1' });
         const origStream = plant.machine.sensors.voltage.stream;
@@ -116,9 +116,87 @@ describe('measurementStream', function() {
             write() {},
             end() {}
         };
-        routes[0].handle(request, response);
+        await routes[0].handle(request, response);
         request.emit('close');
         assert(cancelled === true);
+    });
+
+    it('emits retained value when sensor data is fresh', async function() {
+        const written = [];
+        const now = new Date();
+        const plant = fakePlant({ machineId: 'icht1', voltage: [{ timestamp: now, value: 380, unit: 'V' }] });
+        plant.machine.sensors.voltage.current = function() {
+            return Promise.resolve({ found: true, timestamp: now, value: 380, unit: 'V' });
+        };
+        const routes = measurementStream('/api', plant, () => {return now});
+        const request = new EventEmitter();
+        request.method = 'GET';
+        request.url = '/api/machines/icht1/measurements/stream?keys=voltage&step=1';
+        const response = {
+            writeHead() {},
+            write(content) {
+                written.push(content);
+            },
+            end() {}
+        };
+        await routes[0].handle(request, response);
+        request.emit('close');
+        assert(written.some((w) => {return w.includes('"value":380')}), 'retained value not emitted');
+    });
+
+    it('skips retained value when sensor data is stale', async function() {
+        const written = [];
+        const now = new Date();
+        const stale = new Date(now.getTime() - 20000);
+        const plant = fakePlant({ machineId: 'icht1' });
+        plant.machine.sensors.voltage.current = function() {
+            return Promise.resolve({ found: true, timestamp: stale, value: 380, unit: 'V' });
+        };
+        plant.machine.sensors.voltage.stream = function() {
+            return { cancel() {} };
+        };
+        const routes = measurementStream('/api', plant, () => {return now});
+        const request = new EventEmitter();
+        request.method = 'GET';
+        request.url = '/api/machines/icht1/measurements/stream?keys=voltage&step=1';
+        const response = {
+            writeHead() {},
+            write(content) {
+                written.push(content);
+            },
+            end() {}
+        };
+        await routes[0].handle(request, response);
+        request.emit('close');
+        const measurements = written.filter((w) => {return w.includes('event: measurement')});
+        assert(measurements.length === 0, 'stale retained value should not be emitted');
+    });
+
+    it('skips retained value when sensor has no data', async function() {
+        const written = [];
+        const now = new Date();
+        const plant = fakePlant({ machineId: 'icht1' });
+        plant.machine.sensors.voltage.current = function() {
+            return Promise.resolve({ found: false });
+        };
+        plant.machine.sensors.voltage.stream = function() {
+            return { cancel() {} };
+        };
+        const routes = measurementStream('/api', plant, () => {return now});
+        const request = new EventEmitter();
+        request.method = 'GET';
+        request.url = '/api/machines/icht1/measurements/stream?keys=voltage&step=1';
+        const response = {
+            writeHead() {},
+            write(content) {
+                written.push(content);
+            },
+            end() {}
+        };
+        await routes[0].handle(request, response);
+        request.emit('close');
+        const measurements = written.filter((w) => {return w.includes('event: measurement')});
+        assert(measurements.length === 0, 'should not emit measurement when sensor has no data');
     });
 
     it('resolves beginning time expression', function() {

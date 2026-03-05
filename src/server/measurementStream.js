@@ -14,6 +14,8 @@ import timeExpression from '../objects/timeExpression.js';
  * @example
  *   const routes = measurementStream('/api/v1', plant, clock);
  */
+const RETAIN_MS = 10000;
+
 export default function measurementStream(basePath, plant, clock) {
     function beginning() {
         return new Date(clock().getTime() - 30 * 24 * 60 * 60 * 1000);
@@ -31,7 +33,7 @@ export default function measurementStream(basePath, plant, clock) {
         route(
             'GET',
             `${basePath}/machines/:machineId/measurements/stream`,
-            (req, res, params, query) => {
+            async (req, res, params, query) => {
                 const sse = sseResponse(res, clock);
                 sse.heartbeat();
                 const machine = find(params.machineId);
@@ -56,6 +58,19 @@ export default function measurementStream(basePath, plant, clock) {
                         subscriptions.push(subscription);
                     }
                 });
+                for (const key of keys) {
+                    if (machine.sensors[key]) {
+                        // eslint-disable-next-line no-await-in-loop
+                        const reading = await machine.sensors[key].current();
+                        if (reading.found && clock().getTime() - reading.timestamp.getTime() < RETAIN_MS) {
+                            sse.emit('measurement', {
+                                key,
+                                timestamp: reading.timestamp.toISOString(),
+                                value: reading.value
+                            });
+                        }
+                    }
+                }
                 const heartbeat = setInterval(() => {
                     sse.heartbeat();
                 }, 30000);

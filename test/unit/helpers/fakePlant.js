@@ -22,6 +22,12 @@ export default function fakePlant(config = {}) {
             name() {
                 return sensorName;
             },
+            current() {
+                if (data.length === 0) {
+                    return Promise.resolve({ found: false });
+                }
+                return Promise.resolve({ found: true, timestamp: new Date(), value: Math.random(), unit });
+            },
             measurements(range, step) {
                 return data.length > 0 ? data : [{ timestamp: new Date(), value: Math.random(), unit }];
             },
