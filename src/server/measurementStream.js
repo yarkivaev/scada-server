@@ -29,6 +29,37 @@ export default function measurementStream(basePath, plant, clock) {
         }
         return undefined;
     }
+    function subscribe(machine, keys, since, step, sse) {
+        const subscriptions = [];
+        keys.forEach((key) => {
+            if (machine.sensors[key]) {
+                const subscription = machine.sensors[key].stream(since, step, (item) => {
+                    sse.emit('measurement', {
+                        key,
+                        timestamp: item.timestamp.toISOString(),
+                        value: item.value
+                    });
+                }, clock);
+                subscriptions.push(subscription);
+            }
+        });
+        return subscriptions;
+    }
+    async function retain(machine, keys, sse) {
+        for (const key of keys) {
+            if (machine.sensors[key]) {
+                // eslint-disable-next-line no-await-in-loop
+                const reading = await machine.sensors[key].current();
+                if (reading.found && clock().getTime() - reading.timestamp.getTime() < RETAIN_MS) {
+                    sse.emit('measurement', {
+                        key,
+                        timestamp: reading.timestamp.toISOString(),
+                        value: reading.value
+                    });
+                }
+            }
+        }
+    }
     return [
         route(
             'GET',
@@ -45,32 +76,8 @@ export default function measurementStream(basePath, plant, clock) {
                 const sinceExpr = query.since || 'now';
                 const since = timeExpression(sinceExpr, clock, beginning).resolve();
                 const step = query.step ? parseInt(query.step, 10) * 1000 : 1000;
-                const subscriptions = [];
-                keys.forEach((key) => {
-                    if (machine.sensors[key]) {
-                        const subscription = machine.sensors[key].stream(since, step, (item) => {
-                            sse.emit('measurement', {
-                                key,
-                                timestamp: item.timestamp.toISOString(),
-                                value: item.value
-                            });
-                        }, clock);
-                        subscriptions.push(subscription);
-                    }
-                });
-                for (const key of keys) {
-                    if (machine.sensors[key]) {
-                        // eslint-disable-next-line no-await-in-loop
-                        const reading = await machine.sensors[key].current();
-                        if (reading.found && clock().getTime() - reading.timestamp.getTime() < RETAIN_MS) {
-                            sse.emit('measurement', {
-                                key,
-                                timestamp: reading.timestamp.toISOString(),
-                                value: reading.value
-                            });
-                        }
-                    }
-                }
+                const subscriptions = subscribe(machine, keys, since, step, sse);
+                await retain(machine, keys, sse);
                 const heartbeat = setInterval(() => {
                     sse.heartbeat();
                 }, 30000);
