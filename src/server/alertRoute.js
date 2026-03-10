@@ -60,7 +60,7 @@ export default function alertRoute(basePath, plant) {
                     });
                 }
                 const mapped = alerts.map((a) => {
-                    return { id: a.id, message: a.message, timestamp: a.timestamp.toISOString(), object: a.object, acknowledged: a.acknowledged };
+                    return { id: a.id, message: a.message, timestamp: a.timestamp.toISOString(), object: a.object, acknowledged: a.acknowledged, name: a.name };
                 });
                 const paginated = pagination(page, size, mapped).result();
                 jsonResponse({ items: paginated.items, page: paginated.page, size: paginated.size, total: paginated.total }).send(res);
@@ -88,7 +88,7 @@ export default function alertRoute(basePath, plant) {
                     if (changes.acknowledged === true && !alert.acknowledged) {
                         alert.acknowledge();
                     }
-                    jsonResponse({ id: alert.id, message: alert.message, timestamp: alert.timestamp.toISOString(), object: alert.object, acknowledged: true }).send(res);
+                    jsonResponse({ id: alert.id, message: alert.message, timestamp: alert.timestamp.toISOString(), object: alert.object, acknowledged: true, name: alert.name }).send(res);
                 });
             }
         )

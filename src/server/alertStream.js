@@ -45,7 +45,8 @@ export default function alertStream(basePath, plant, clock) {
                                 message: event.alert.message,
                                 timestamp: event.alert.timestamp.toISOString(),
                                 object: event.alert.object,
-                                acknowledged: event.alert.acknowledged
+                                acknowledged: event.alert.acknowledged,
+                                name: event.alert.name
                             });
                         } else if (event.type === 'acknowledged') {
                             sse.emit('alert_updated', {
