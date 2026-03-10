@@ -1,4 +1,5 @@
 import machineClient from './machineClient.js';
+import sseConnection from './sseConnection.js';
 
 /**
  * Main SCADA API client.
@@ -56,6 +57,9 @@ export default function scadaClient(baseUrl, fetcher, eventSource) {
                 throw error;
             }
             return payload;
+        },
+        heartbeatStream() {
+            return sseConnection(`${baseUrl}/heartbeat/stream`, eventSource);
         },
         async simulation() {
             const response = await fetcher(`${baseUrl}/simulation`);

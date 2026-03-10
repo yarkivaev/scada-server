@@ -73,6 +73,23 @@ describe('scadaClient', function() {
         assert(typeof client.simulation === 'function', 'client should have simulation method');
     });
 
+    it('returns object with heartbeatStream method', function() {
+        const client = scadaClient('http://localhost', () => {}, function() {});
+        assert(typeof client.heartbeatStream === 'function', 'client should have heartbeatStream method');
+    });
+
+    it('creates heartbeat connection to correct URL', function() {
+        let captured;
+        const fakeEventSource = function(url) {
+            captured = url;
+            this.addEventListener = function() {};
+            this.close = function() {};
+        };
+        const client = scadaClient('http://localhost/api', () => {}, fakeEventSource);
+        client.heartbeatStream();
+        assert(captured === 'http://localhost/api/heartbeat/stream', 'should connect to heartbeat stream URL');
+    });
+
     it('posts jump to correct URL', async function() {
         let fetchedUrl;
         const fakeFetch = async (url) => {

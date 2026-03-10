@@ -116,6 +116,48 @@ describe('segmentStream', function() {
         assert(!written.includes('event: segment_created'), 'event emitted after close');
     });
 
+    it('includes options in segment_created payload when present', function() {
+        const plant = fakePlant({ machineId: 'icht1' });
+        const routes = segmentStream('/api', plant, () => {return new Date()});
+        const request = new EventEmitter();
+        request.method = 'GET';
+        request.url = '/api/machines/icht1/segments/stream';
+        let written = '';
+        const response = {
+            writeHead() {},
+            write(data) { written += data; },
+            end() {}
+        };
+        routes[0].handle(request, response);
+        const optionKey = `ключ_${Math.random()}`;
+        const optionValue = `значение_${Math.random()}`;
+        plant.segments.notify({
+            type: 'created',
+            segment: { name: 'on', startTime: new Date(), endTime: new Date(), duration: 3600, options: { [optionKey]: optionValue } }
+        });
+        assert(written.includes(optionKey), 'options not included in segment_created payload');
+    });
+
+    it('omits options from segment_created payload when absent', function() {
+        const plant = fakePlant({ machineId: 'icht1' });
+        const routes = segmentStream('/api', plant, () => {return new Date()});
+        const request = new EventEmitter();
+        request.method = 'GET';
+        request.url = '/api/machines/icht1/segments/stream';
+        let written = '';
+        const response = {
+            writeHead() {},
+            write(data) { written += data; },
+            end() {}
+        };
+        routes[0].handle(request, response);
+        plant.segments.notify({
+            type: 'created',
+            segment: { name: 'on', startTime: new Date(), endTime: new Date(), duration: 3600 }
+        });
+        assert(!written.includes('options'), 'options present in payload when absent on segment');
+    });
+
     it('closes stream for unknown machine', function() {
         const plant = fakePlant({ machineId: 'icht1' });
         const routes = segmentStream('/api', plant, () => {return new Date()});

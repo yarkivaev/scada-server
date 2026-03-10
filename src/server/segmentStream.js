@@ -39,19 +39,27 @@ export default function segmentStream(basePath, plant, clock) {
                 const { machine } = result;
                 const subscription = machine.segments.stream((event) => {
                     if (event.type === 'created') {
-                        sse.emit('segment_created', {
+                        const payload = {
                             name: event.segment.name,
                             start: event.segment.startTime.toISOString(),
                             end: event.segment.endTime.toISOString(),
                             duration: event.segment.duration
-                        });
+                        };
+                        if (event.segment.options) {
+                            payload.options = event.segment.options;
+                        }
+                        sse.emit('segment_created', payload);
                     } else if (event.type === 'relabeled') {
-                        sse.emit('segment_relabeled', {
+                        const payload = {
                             name: event.segment.name,
                             start: event.segment.startTime.toISOString(),
                             end: event.segment.endTime.toISOString(),
                             duration: event.segment.duration
-                        });
+                        };
+                        if (event.segment.options) {
+                            payload.options = event.segment.options;
+                        }
+                        sse.emit('segment_relabeled', payload);
                     }
                 });
                 const heartbeat = setInterval(() => {
