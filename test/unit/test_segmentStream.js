@@ -138,6 +138,48 @@ describe('segmentStream', function() {
         assert(written.includes(optionKey), 'options not included in segment_created payload');
     });
 
+    it('includes tags in segment_created payload when present', function() {
+        const plant = fakePlant({ machineId: 'icht1' });
+        const routes = segmentStream('/api', plant, () => {return new Date()});
+        const request = new EventEmitter();
+        request.method = 'GET';
+        request.url = '/api/machines/icht1/segments/stream';
+        let written = '';
+        const response = {
+            writeHead() {},
+            write(data) { written += data; },
+            end() {}
+        };
+        routes[0].handle(request, response);
+        const tag = `тег_${Math.random()}`;
+        plant.segments.notify({
+            type: 'created',
+            segment: { name: 'off', startTime: new Date(), endTime: new Date(), duration: 3600, tags: [tag] }
+        });
+        assert(written.includes(tag), 'tags not included in segment_created payload');
+    });
+
+    it('includes properties in segment_created payload when present', function() {
+        const plant = fakePlant({ machineId: 'icht1' });
+        const routes = segmentStream('/api', plant, () => {return new Date()});
+        const request = new EventEmitter();
+        request.method = 'GET';
+        request.url = '/api/machines/icht1/segments/stream';
+        let written = '';
+        const response = {
+            writeHead() {},
+            write(data) { written += data; },
+            end() {}
+        };
+        routes[0].handle(request, response);
+        const key = `свойство_${Math.random()}`;
+        plant.segments.notify({
+            type: 'created',
+            segment: { name: 'off', startTime: new Date(), endTime: new Date(), duration: 3600, tags: ['charge_loading'], properties: { [key]: 42 } }
+        });
+        assert(written.includes(key), 'properties not included in segment_created payload');
+    });
+
     it('omits options from segment_created payload when absent', function() {
         const plant = fakePlant({ machineId: 'icht1' });
         const routes = segmentStream('/api', plant, () => {return new Date()});
@@ -156,6 +198,27 @@ describe('segmentStream', function() {
             segment: { name: 'on', startTime: new Date(), endTime: new Date(), duration: 3600 }
         });
         assert(!written.includes('options'), 'options present in payload when absent on segment');
+    });
+
+    it('includes options in segment_relabeled payload when present', function() {
+        const plant = fakePlant({ machineId: 'icht1' });
+        const routes = segmentStream('/api', plant, () => {return new Date()});
+        const request = new EventEmitter();
+        request.method = 'GET';
+        request.url = '/api/machines/icht1/segments/stream';
+        let written = '';
+        const response = {
+            writeHead() {},
+            write(data) { written += data; },
+            end() {}
+        };
+        routes[0].handle(request, response);
+        const optionKey = `опция_${Math.random()}`;
+        plant.segments.notify({
+            type: 'relabeled',
+            segment: { name: 'heating', startTime: new Date(), endTime: new Date(), duration: 3600, options: { [optionKey]: true }, tags: ['heating'] }
+        });
+        assert(written.includes(optionKey), 'options not included in segment_relabeled payload');
     });
 
     it('closes stream for unknown machine', function() {

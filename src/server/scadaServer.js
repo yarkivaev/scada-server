@@ -20,6 +20,8 @@ import routes from './routes.js';
  * @param {string} basePath - base URL path for all routes
  * @param {object} plant - plant domain object from scada package
  * @param {function} clock - time provider function (optional)
+ * @param {object} options - optional configuration
+ * @param {number} options.heartbeat - heartbeat interval in milliseconds (default: 5000)
  * @returns {object} routes object with list() and handle() methods
  *
  * @example
@@ -29,7 +31,8 @@ import routes from './routes.js';
  *   const server = scadaServer('/api/v1', p);
  *   http.createServer((req, res) => server.handle(req, res)).listen(3000);
  */
-export default function scadaServer(basePath, plant, clock) {
+export default function scadaServer(basePath, plant, clock, options) {
+    const opts = options || {};
     plant.init();
     const time = clock || (() => {
         return new Date();
@@ -46,7 +49,7 @@ export default function scadaServer(basePath, plant, clock) {
         ...segmentStream(basePath, plant, time),
         ...requestRoute(basePath, plant),
         ...requestStream(basePath, plant, time),
-        ...heartbeatStream(basePath, time),
+        ...heartbeatStream(basePath, time, opts.heartbeat),
         ...(time.jump ? simulationRoute(basePath, time) : [])
     ];
     return routes(routeList);

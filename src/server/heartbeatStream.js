@@ -8,12 +8,14 @@ import sseResponse from '../objects/sseResponse.js';
  *
  * @param {string} basePath - base URL path
  * @param {function} clock - time provider
+ * @param {number} period - interval between heartbeats in milliseconds (default: 5000)
  * @returns {array} array of route objects
  *
  * @example
- *   const routes = heartbeatStream('/api/v1', () => new Date());
+ *   const routes = heartbeatStream('/api/v1', () => new Date(), 1000);
  */
-export default function heartbeatStream(basePath, clock) {
+export default function heartbeatStream(basePath, clock, period) {
+    const ms = period || 5000;
     return [
         route(
             'GET',
@@ -23,7 +25,7 @@ export default function heartbeatStream(basePath, clock) {
                 sse.heartbeat();
                 const interval = setInterval(() => {
                     sse.heartbeat();
-                }, 5000);
+                }, ms);
                 req.on('close', () => {
                     clearInterval(interval);
                 });

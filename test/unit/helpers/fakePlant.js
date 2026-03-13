@@ -56,6 +56,19 @@ export default function fakePlant(config = {}) {
             }
             return segmentItems.slice();
         },
+        async retag(start, tags, properties) {
+            const found = segmentItems.find((item) => {
+                return item.start_time.getTime() === start.getTime();
+            });
+            if (found) {
+                found.tags = JSON.stringify(tags);
+                found.properties = JSON.stringify(properties);
+                delete found.options;
+                segmentSubscribers.forEach((cb) => {
+                    cb({ type: 'relabeled', segment: found });
+                });
+            }
+        },
         stream(callback) {
             segmentSubscribers.push(callback);
             return {

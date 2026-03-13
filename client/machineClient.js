@@ -131,6 +131,9 @@ export default function machineClient(baseUrl, machineId, fetcher, eventSource) 
             const qs = params.toString();
             return request(`/segments${qs ? `?${qs}` : ''}`);
         },
+        async retag(data) {
+            return request('/segments', payload('PATCH', data));
+        },
         segmentStream() {
             return sseConnection(`${url}/segments/stream`, eventSource);
         },

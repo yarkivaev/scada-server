@@ -55,7 +55,7 @@ describe('requestRoute', function() {
         assert(parsed.items.length === 0, 'should return empty items');
     });
 
-    it('responds to request with label', function(done) {
+    it('responds to request with tags', function(done) {
         const plant = fakePlant({
             machineId: 'icht1',
             requests: [
@@ -76,7 +76,7 @@ describe('requestRoute', function() {
             }
         };
         routes[1].handle(request, response);
-        request.emit('data', JSON.stringify({ label: 'heating' }));
+        request.emit('data', JSON.stringify({ tags: ['heating'], properties: {} }));
         request.emit('end');
     });
 
@@ -100,7 +100,7 @@ describe('requestRoute', function() {
             }
         };
         routes[1].handle(request, response);
-        request.emit('data', JSON.stringify({ splits: [{ start: 0, end: 900, label: 'on' }, { start: 900, end: 1800, label: 'off' }] }));
+        request.emit('data', JSON.stringify({ splits: [{ start: 0, end: 900, tags: ['on'] }, { start: 900, end: 1800, tags: ['off'] }] }));
         request.emit('end');
     });
 
@@ -121,7 +121,7 @@ describe('requestRoute', function() {
             }
         };
         routes[1].handle(request, response);
-        request.emit('data', JSON.stringify({ label: 'on' }));
+        request.emit('data', JSON.stringify({ tags: ['on'], properties: {} }));
         request.emit('end');
     });
 

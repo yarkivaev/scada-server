@@ -1,3 +1,4 @@
+import errorResponse from '../objects/errorResponse.js';
 import jsonResponse from '../objects/jsonResponse.js';
 import route from '../objects/route.js';
 
@@ -41,7 +42,7 @@ export default function segmentRoute(basePath, plant) {
                     options.to = query.to;
                 }
                 const segments = await machine.segments.query(options);
-                const items = segments.map(({ name, start_time: startTime, end_time: endTime, duration, options: opts, label }) => {
+                const items = segments.map(({ name, start_time: startTime, end_time: endTime, duration, options: opts, tags, properties }) => {
                     const mapped = {
                         name,
                         start: startTime.toISOString(),
@@ -51,12 +52,40 @@ export default function segmentRoute(basePath, plant) {
                     if (opts) {
                         mapped.options = opts;
                     }
-                    if (label) {
-                        mapped.label = label;
+                    if (tags) {
+                        mapped.tags = tags;
+                    }
+                    if (properties) {
+                        mapped.properties = properties;
                     }
                     return mapped;
                 });
                 jsonResponse({ items }).send(res);
+            }
+        ),
+        route(
+            'PATCH',
+            `${basePath}/machines/:machineId/segments`,
+            (req, res, params) => {
+                let body = '';
+                req.on('data', (chunk) => {
+                    body += chunk;
+                });
+                req.on('end', async () => {
+                    const result = find(params.machineId);
+                    if (!result) {
+                        errorResponse(
+                            'NOT_FOUND',
+                            `Machine '${params.machineId}' not found`,
+                            404
+                        ).send(res);
+                        return;
+                    }
+                    const { machine } = result;
+                    const parsed = JSON.parse(body);
+                    await machine.segments.retag(new Date(parsed.start), parsed.tags, parsed.properties);
+                    jsonResponse({ status: 'updated' }).send(res);
+                });
             }
         )
     ];
