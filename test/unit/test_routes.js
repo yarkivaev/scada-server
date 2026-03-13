@@ -124,6 +124,62 @@ describe('routes', function() {
         assert(headers['Access-Control-Allow-Methods'].includes('POST'), 'should include POST');
     });
 
+    it('returns 500 when route handler throws', async function() {
+        let statusCode;
+        const failing = route('GET', '/api/explode', () => {
+            throw new Error('Börkéd connection');
+        });
+        const rt = routes([failing]);
+        const request = { method: 'GET', url: '/api/explode' };
+        const response = {
+            writeHead(code) {
+                statusCode = code;
+            },
+            end() {}
+        };
+        await rt.handle(request, response);
+        assert(statusCode === 500, 'expected 500 status on handler error');
+    });
+
+    it('returns INTERNAL_ERROR code when route handler throws', async function() {
+        let body;
+        const failing = route('GET', '/api/explode', () => {
+            throw new Error('Börkéd connection');
+        });
+        const rt = routes([failing]);
+        const request = { method: 'GET', url: '/api/explode' };
+        const response = {
+            writeHead() {},
+            end(content) {
+                body = content;
+            }
+        };
+        await rt.handle(request, response);
+        assert(JSON.parse(body).error.code === 'INTERNAL_ERROR', 'expected INTERNAL_ERROR code');
+    });
+
+    it('destroys response when handler throws after headers sent', async function() {
+        let destroyed = false;
+        const failing = route('GET', '/api/stream', (req, res) => {
+            res.writeHead(200);
+            throw new Error('Börkéd mid-stream');
+        });
+        const rt = routes([failing]);
+        const request = { method: 'GET', url: '/api/stream' };
+        const response = {
+            headersSent: false,
+            writeHead() {
+                this.headersSent = true;
+            },
+            end() {},
+            destroy() {
+                destroyed = true;
+            }
+        };
+        await rt.handle(request, response);
+        assert(destroyed, 'expected response to be destroyed when headers already sent');
+    });
+
     it('includes DELETE in allowed methods for OPTIONS', async function() {
         let headers;
         const rt = routes([fakeRoute('GET', '/api/machines')]);

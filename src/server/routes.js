@@ -30,7 +30,15 @@ export default function routes(routeList) {
                 return rt.matches(req);
             });
             if (matching) {
-                await matching.handle(req, res);
+                try {
+                    await matching.handle(req, res);
+                } catch (err) {
+                    if (res.headersSent) {
+                        res.destroy();
+                    } else {
+                        errorResponse('INTERNAL_ERROR', err.message, 500).send(res);
+                    }
+                }
             } else {
                 errorResponse('NOT_FOUND', 'Route not found', 404).send(res);
             }
