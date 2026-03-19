@@ -77,7 +77,6 @@ export default function measurementStream(basePath, plant, clock) {
                 const since = timeExpression(sinceExpr, clock, beginning).resolve();
                 const step = query.step ? parseInt(query.step, 10) * 1000 : 1000;
                 const subscriptions = subscribe(machine, keys, since, step, sse);
-                await retain(machine, keys, sse);
                 const heartbeat = setInterval(() => {
                     sse.heartbeat();
                 }, 30000);
@@ -87,6 +86,7 @@ export default function measurementStream(basePath, plant, clock) {
                         subscription.cancel();
                     });
                 });
+                await retain(machine, keys, sse);
             }
         )
     ];
