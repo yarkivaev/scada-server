@@ -65,7 +65,7 @@ export default function fakePlant(config = {}) {
                 found.properties = JSON.stringify(properties);
                 delete found.options;
                 segmentSubscribers.forEach((cb) => {
-                    cb({ type: 'relabeled', segment: found });
+                    cb({ type: 'resolved', segment: found });
                 });
             }
         },

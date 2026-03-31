@@ -4,7 +4,7 @@ import sseResponse from '../objects/sseResponse.js';
 /**
  * Segment stream route factory.
  * Creates SSE route for /machines/:machineId/segments/stream.
- * Streams segment_created and segment_relabeled events for the specified machine.
+ * Streams segment_created and segment_resolved events for the specified machine.
  *
  * @param {string} basePath - base URL path
  * @param {object} plant - plant domain object from scada package
@@ -64,8 +64,8 @@ export default function segmentStream(basePath, plant, clock) {
                 const subscription = machine.segments.stream((event) => {
                     if (event.type === 'created') {
                         sse.emit('segment_created', payload(event.segment));
-                    } else if (event.type === 'relabeled') {
-                        sse.emit('segment_relabeled', payload(event.segment));
+                    } else if (event.type === 'resolved') {
+                        sse.emit('segment_resolved', payload(event.segment));
                     }
                 });
                 const heartbeat = setInterval(() => {

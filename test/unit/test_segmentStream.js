@@ -55,7 +55,7 @@ describe('segmentStream', function() {
         assert(written.includes('event: segment_created'), 'segment_created event not emitted');
     });
 
-    it('emits segment_relabeled event', function() {
+    it('emits segment_resolved event', function() {
         const plant = fakePlant({ machineId: 'icht1' });
         const routes = segmentStream('/api', plant, () => {return new Date()});
         const request = new EventEmitter();
@@ -69,10 +69,10 @@ describe('segmentStream', function() {
         };
         routes[0].handle(request, response);
         plant.segments.notify({
-            type: 'relabeled',
+            type: 'resolved',
             segment: { name: 'heating', startTime: new Date(), endTime: new Date(), duration: 3600 }
         });
-        assert(written.includes('event: segment_relabeled'), 'segment_relabeled event not emitted');
+        assert(written.includes('event: segment_resolved'), 'segment_resolved event not emitted');
     });
 
     it('streams all events from machine segments collection', function() {
@@ -200,7 +200,7 @@ describe('segmentStream', function() {
         assert(!written.includes('options'), 'options present in payload when absent on segment');
     });
 
-    it('includes options in segment_relabeled payload when present', function() {
+    it('includes options in segment_resolved payload when present', function() {
         const plant = fakePlant({ machineId: 'icht1' });
         const routes = segmentStream('/api', plant, () => {return new Date()});
         const request = new EventEmitter();
@@ -215,10 +215,10 @@ describe('segmentStream', function() {
         routes[0].handle(request, response);
         const optionKey = `опция_${Math.random()}`;
         plant.segments.notify({
-            type: 'relabeled',
+            type: 'resolved',
             segment: { name: 'heating', startTime: new Date(), endTime: new Date(), duration: 3600, options: { [optionKey]: true }, tags: ['heating'] }
         });
-        assert(written.includes(optionKey), 'options not included in segment_relabeled payload');
+        assert(written.includes(optionKey), 'options not included in segment_resolved payload');
     });
 
     it('closes stream for unknown machine', function() {
