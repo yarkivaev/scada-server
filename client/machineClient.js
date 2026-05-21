@@ -23,18 +23,31 @@ function payload(method, data) {
  * @param {string} machineId - machine identifier
  * @param {function} fetcher - fetch function
  * @param {function} eventSource - EventSource constructor
+ * @param {object} [logger] - optional logger with error(tag, detail)
  * @returns {object} client with info, measurements, alerts, meltings methods
  *
  * @example
- *   const machine = machineClient(baseUrl, 'icht1', fetch, EventSource);
+ *   const machine = machineClient(baseUrl, 'icht1', fetch, EventSource, logger);
  *   const info = await machine.info();
  */
-export default function machineClient(baseUrl, machineId, fetcher, eventSource) {
+export default function machineClient(baseUrl, machineId, fetcher, eventSource, logger) {
     const url = `${baseUrl}/machines/${machineId}`;
     async function request(path, options) {
-        const response = await fetcher(`${url}${path}`, options);
+        const fullPath = `${url}${path}`;
+        let response;
+        try {
+            response = await fetcher(fullPath, options);
+        } catch (cause) {
+            if (logger && typeof logger.error === 'function') {
+                logger.error('api.network', { path: fullPath, cause });
+            }
+            throw cause;
+        }
         const result = await response.json();
         if (!response.ok) {
+            if (logger && typeof logger.error === 'function') {
+                logger.error('api', { path: fullPath, body: result });
+            }
             throw result;
         }
         return result;
@@ -74,7 +87,8 @@ export default function machineClient(baseUrl, machineId, fetcher, eventSource) 
             const qs = params.toString();
             return sseConnection(
                 `${url}/measurements/stream${qs ? `?${qs}` : ''}`,
-                eventSource
+                eventSource,
+                logger
             );
         },
         async alerts(options) {
@@ -92,7 +106,7 @@ export default function machineClient(baseUrl, machineId, fetcher, eventSource) 
             return request(`/alerts${qs ? `?${qs}` : ''}`);
         },
         alertStream() {
-            return sseConnection(`${url}/alerts/stream`, eventSource);
+            return sseConnection(`${url}/alerts/stream`, eventSource, logger);
         },
         async acknowledge(alertId) {
             return request(`/alerts/${alertId}`, payload('PATCH', { acknowledged: true }));
@@ -118,7 +132,7 @@ export default function machineClient(baseUrl, machineId, fetcher, eventSource) 
             return request(`/meltings/${meltingId}`);
         },
         meltingStream() {
-            return sseConnection(`${url}/meltings/stream`, eventSource);
+            return sseConnection(`${url}/meltings/stream`, eventSource, logger);
         },
         async segments(options) {
             const params = new URLSearchParams();
@@ -135,13 +149,13 @@ export default function machineClient(baseUrl, machineId, fetcher, eventSource) 
             return request('/segments', payload('PATCH', data));
         },
         segmentStream() {
-            return sseConnection(`${url}/segments/stream`, eventSource);
+            return sseConnection(`${url}/segments/stream`, eventSource, logger);
         },
         async requests() {
             return request('/requests');
         },
         requestStream() {
-            return sseConnection(`${url}/requests/stream`, eventSource);
+            return sseConnection(`${url}/requests/stream`, eventSource, logger);
         },
         async respond(requestId, data) {
             return request(`/requests/${requestId}/respond`, payload('POST', data));

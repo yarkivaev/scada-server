@@ -85,4 +85,42 @@ describe('sseConnection', function() {
         conn.close();
         assert(closed === true);
     });
+
+    it('logs sse parse failures without calling notify', function() {
+        let listener;
+        let notified = false;
+        const calls = [];
+        const logger = {
+            error(tag, detail) { calls.push({ tag, detail }); }
+        };
+        const FakeEventSource = function() {
+            this.addEventListener = (event, fn) => {
+                listener = fn;
+            };
+            this.close = () => {};
+        };
+        const conn = sseConnection('http://test.com/stream', FakeEventSource, logger);
+        conn.on('measurement', () => { notified = true; });
+        listener({ data: 'not-json' });
+        assert(calls.length === 1 && calls[0].tag === 'sse.parse' && notified === false,
+            'parse failure was not logged or notify was called');
+    });
+
+    it('logs sse connection errors through logger', function() {
+        const calls = [];
+        const logger = {
+            error(tag, detail) { calls.push({ tag, detail }); }
+        };
+        const sources = [];
+        const FakeEventSource = function(url) {
+            this.url = url;
+            this.addEventListener = () => {};
+            this.close = () => {};
+            sources.push(this);
+        };
+        sseConnection('http://test.com/stream', FakeEventSource, logger);
+        sources[0].onerror();
+        assert(calls.length === 1 && calls[0].tag === 'sse.connection',
+            'connection error was not logged');
+    });
 });
