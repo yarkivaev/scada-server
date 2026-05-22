@@ -15,6 +15,10 @@
 // Server
 export { default as scadaServer } from './src/server/scadaServer.js';
 export { default as routes } from './src/server/routes.js';
+export {
+    parseRequestTimeoutMs,
+    DEFAULT_REQUEST_TIMEOUT_MS
+} from './src/server/requestTimeout.js';
 
 // Simulation
 export { default as virtualClock } from './src/objects/virtualClock.js';

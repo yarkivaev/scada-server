@@ -1,6 +1,8 @@
 import errorResponse from '../objects/errorResponse.js';
 import jsonResponse from '../objects/jsonResponse.js';
 import route from '../objects/route.js';
+import readBody from './readBody.js';
+import sendRouteError from './sendRouteError.js';
 
 /**
  * Label request routes factory.
@@ -53,23 +55,21 @@ export default function requestRoute(basePath, plant) {
         route(
             'POST',
             `${basePath}/machines/:machineId/requests/:requestId/respond`,
-            (req, res, params) => {
-                let body = '';
-                req.on('data', (chunk) => {
-                    body += chunk;
-                });
-                req.on('end', async () => {
-                    const result = find(params.machineId);
-                    if (!result) {
-                        errorResponse(
-                            'NOT_FOUND',
-                            `Machine '${params.machineId}' not found`,
-                            404
-                        ).send(res);
-                        return;
-                    }
+            async (req, res, params) => {
+                const result = find(params.machineId);
+                if (!result) {
+                    errorResponse(
+                        'NOT_FOUND',
+                        `Machine '${params.machineId}' not found`,
+                        404
+                    ).send(res);
+                    return;
+                }
+                try {
+                    const raw = await readBody(req);
+                    const parsed = JSON.parse(raw);
                     const { machine } = result;
-                    const response = await machine.requests.respond(params.requestId, JSON.parse(body));
+                    const response = await machine.requests.respond(params.requestId, parsed);
                     if (!response) {
                         errorResponse(
                             'NOT_FOUND',
@@ -79,7 +79,9 @@ export default function requestRoute(basePath, plant) {
                         return;
                     }
                     jsonResponse({ id: params.requestId, status: 'resolved' }).send(res);
-                });
+                } catch (err) {
+                    sendRouteError(res, err);
+                }
             }
         )
     ];

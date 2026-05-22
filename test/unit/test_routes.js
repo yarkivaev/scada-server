@@ -180,6 +180,31 @@ describe('routes', function() {
         assert(destroyed, 'expected response to be destroyed when headers already sent');
     });
 
+    it('returns TIMEOUT error code when handler exceeds request timeout', async function() {
+        let body;
+        const slow = route('GET', '/api/slow', async () => {
+            await new Promise((resolve) => {
+                setTimeout(resolve, 200);
+            });
+        });
+        const rt = routes([slow], { requestTimeoutMs: 50 });
+        const request = { method: 'GET', url: '/api/slow' };
+        const response = {
+            headersSent: false,
+            statusCode: 0,
+            writeHead(code) {
+                this.statusCode = code;
+            },
+            end(content) {
+                body = content;
+            }
+        };
+        await rt.handle(request, response);
+        const payload = JSON.parse(body);
+        assert.strictEqual(payload.error.code, 'TIMEOUT', 'expected TIMEOUT error code');
+        assert.strictEqual(response.statusCode, 504, 'expected gateway timeout status');
+    });
+
     it('includes DELETE in allowed methods for OPTIONS', async function() {
         let headers;
         const rt = routes([fakeRoute('GET', '/api/machines')]);

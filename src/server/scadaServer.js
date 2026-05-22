@@ -22,6 +22,7 @@ import routes from './routes.js';
  * @param {function} clock - time provider function (optional)
  * @param {object} options - optional configuration
  * @param {number} options.heartbeat - heartbeat interval in milliseconds (default: 5000)
+ * @param {number} options.requestTimeoutMs - REST handler deadline (default: 30000)
  * @returns {object} routes object with list() and handle() methods
  *
  * @example
@@ -52,5 +53,5 @@ export default function scadaServer(basePath, plant, clock, options) {
         ...heartbeatStream(basePath, time, opts.heartbeat),
         ...(time.jump ? simulationRoute(basePath, time) : [])
     ];
-    return routes(routeList);
+    return routes(routeList, { requestTimeoutMs: opts.requestTimeoutMs });
 }

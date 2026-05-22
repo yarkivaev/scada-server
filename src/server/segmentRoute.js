@@ -1,6 +1,8 @@
 import errorResponse from '../objects/errorResponse.js';
 import jsonResponse from '../objects/jsonResponse.js';
 import route from '../objects/route.js';
+import readBody from './readBody.js';
+import sendRouteError from './sendRouteError.js';
 
 /**
  * Segment routes factory.
@@ -66,26 +68,25 @@ export default function segmentRoute(basePath, plant) {
         route(
             'PATCH',
             `${basePath}/machines/:machineId/segments`,
-            (req, res, params) => {
-                let body = '';
-                req.on('data', (chunk) => {
-                    body += chunk;
-                });
-                req.on('end', async () => {
-                    const result = find(params.machineId);
-                    if (!result) {
-                        errorResponse(
-                            'NOT_FOUND',
-                            `Machine '${params.machineId}' not found`,
-                            404
-                        ).send(res);
-                        return;
-                    }
+            async (req, res, params) => {
+                const result = find(params.machineId);
+                if (!result) {
+                    errorResponse(
+                        'NOT_FOUND',
+                        `Machine '${params.machineId}' not found`,
+                        404
+                    ).send(res);
+                    return;
+                }
+                try {
+                    const raw = await readBody(req);
+                    const parsed = JSON.parse(raw);
                     const { machine } = result;
-                    const parsed = JSON.parse(body);
                     await machine.segments.retag(new Date(parsed.start), parsed.tags, parsed.properties);
                     jsonResponse({ status: 'updated' }).send(res);
-                });
+                } catch (err) {
+                    sendRouteError(res, err);
+                }
             }
         )
     ];

@@ -1,4 +1,6 @@
 import errorResponse from '../objects/errorResponse.js';
+import sendRouteError from './sendRouteError.js';
+import runWithRequestTimeout, { parseRequestTimeoutMs } from './requestTimeout.js';
 
 /**
  * Route collection that dispatches requests to matching routes.
@@ -11,7 +13,8 @@ import errorResponse from '../objects/errorResponse.js';
  *   const api = routes([...machineRoute(basePath, machines), ...alertRoute(basePath, alerts)]);
  *   http.createServer((req, res) => api.handle(req, res)).listen(3000);
  */
-export default function routes(routeList) {
+export default function routes(routeList, options = {}) {
+    const timeoutMs = parseRequestTimeoutMs(options.requestTimeoutMs);
     return {
         list() {
             return routeList;
@@ -31,13 +34,16 @@ export default function routes(routeList) {
             });
             if (matching) {
                 try {
-                    await matching.handle(req, res);
+                    await runWithRequestTimeout(
+                        (request, response) => {
+                            return matching.handle(request, response);
+                        },
+                        req,
+                        res,
+                        timeoutMs
+                    );
                 } catch (err) {
-                    if (res.headersSent) {
-                        res.destroy();
-                    } else {
-                        errorResponse('INTERNAL_ERROR', err.message, 500).send(res);
-                    }
+                    sendRouteError(res, err);
                 }
             } else {
                 errorResponse('NOT_FOUND', 'Route not found', 404).send(res);

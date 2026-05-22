@@ -14,6 +14,9 @@ export default function jsonResponse(payload, statusCode) {
     const code = statusCode || 200;
     return {
         send(response) {
+            if (response.headersSent) {
+                return;
+            }
             response.writeHead(code, {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
